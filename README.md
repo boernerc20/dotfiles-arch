@@ -102,19 +102,14 @@ feh --bg-fill ~/Pictures/hollow-knight.png &
 
 <h2></h2>
 
-### <samp>Sxhkd Keybindings</samp>
+### <samp>Hyprwm Keybindings</samp>
 
 |Action|Keybinding|
 |---|---|
-|App launcher|<code>super + c</code>|
-|Toggle polybar|<code>super + x</code>|
+|App launcher|<code>super + d</code>|
 |Terminal|<code>super + Return</code>|
-|Restart bspwm|<code>super + alt + r</code>|
-|Reload sxhkd|<code>super + Esc</code>|
-|Close program|<code>super + w</code>|
-|Quit bspwm|<code>super + alt + q</code>|
-|Increase/Decrease brightness|<code>super + F10/F11</code>|
-|Increase/Decrease volume|<code>super + shift + F10/F11</code>|
+|Restart bspwm|<code>super + r</code>|
+|Close program|<code>super + q</code>|
 
 <h2></h2>
 
