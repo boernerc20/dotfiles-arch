@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>home</title>
+    <link rel="icon" type="image/x-icon" href="icons/arch.png">
+    <link rel="stylesheet" href="colors.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+      function refreshCSS() {
+        ['colors.css','style.css'].forEach(file => {
+          const link = document.querySelector(`link[href*="${file}"]`);
+          if (!link) return;
+          const href = link.getAttribute('href').split('?')[0];
+          link.setAttribute('href', href + '?v=' + Date.now());
+        });
+      }
+      refreshCSS();
+    </script>
+    <script src='time.js'></script>
+  </head>
+     
+  <body onload="realtimeClock()">   
+    <div class="time"><div id="clock"></div></div>
+    <div class="title">Hello Chris</div>
+    
+    <form class="search" action="https://www.google.com/search" method="get">
+      <input
+        id="searchInput"
+        class="search-input"
+        type="text"
+        name="q"
+        autocomplete="off"
+        autofocus
+      >
+    </form>
+
+    <div class="bookmark">
+      <div class="category">
+        <div class="bookmarks">
+          <li><a href="https://gmail.com">Gmail</a></li>
+          <li><a href="https://chatgpt.com/">ChatGPT</a></li>
+          <li><a href="https://amazon.com/">Amazon</a></li>
+          <li><a href="https://linkedin.com">Linkedin</a></li>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="bookmarks">
+          <li><a href="https://github.com/">GitHub</a></li>
+          <li><a href="https://calendar.google.com">Calendar</a></li>
+          <li><a href="https://drive.google.com/">Drive</a></li>
+          <li><a href="https://app.capacities.io/">Capacities</a></li>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="bookmarks">
+          <li><a href="https://reddit.com/">Reddit</a></li>
+          <li><a href="https://instagram.com/">Instagram</a></li>
+          <li><a href="https://outlook.office.com/">Outlook</a></li>
+          <li><a href="https://discord.com/channels/@me">Discord</a></li>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="bookmarks">
+          <li><a href="https://youtube.com/">YouTube</a></li>
+          <li><a href="https://primevideo.com/">Prime Video</a></li>
+          <li><a href="https://twitch.tv/">Twitch</a></li>
+          <li><a href="https://netflix.com/">Netflix</a></li>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      // give Firefox a moment to settle focus
+      setTimeout(() => {
+        const fld = document.getElementById('searchInput');
+        if (fld) fld.focus({preventScroll:true});
+      }, 100);
+    });
+  </script>
+  </body>
+</html>
+
+

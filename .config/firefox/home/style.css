@@ -1,0 +1,147 @@
+@import url('colors.css');
+
+:root {
+    --color-bg: var(--background);
+    --color-fg: var(--color12);
+    --color-link: var(--color12);
+    --color-link-visited: var(--color12);
+    --color-link-hover: var(--color10);
+    --clock-font: 'CartographCF Nerd Font';
+    --text-font: 'CartographCF Nerd Font';
+}
+
+html {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.time {
+    font-family: var(--clock-font);
+    font-weight: 900;
+    text-align: center;
+    font-size: 68px;
+    color: var(--color-fg);
+}
+
+@media (max-width: 768px) {
+    .time {
+        font-size: 42px;
+    }
+}
+
+.title {
+    font-family: var(--text-font);
+    text-align: center;
+    margin: 0.5rem 0 2rem;
+    color: var(--color6);
+    font-size: 24px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+}
+
+.category {
+    display: flex;
+    flex-direction: column;
+    width: 170px;
+}
+
+.bookmark {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.bookmarks {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+}
+
+li {
+    display: flex;
+    list-style-type: none;
+    font-family: var(--text-font);
+    font-size: 22px;
+    padding: 2px;
+    list-style-type: none;
+}
+
+a {
+    transition: 0.25s color;
+}
+
+a:link {
+    text-decoration: none;
+    color: var(--color-link);
+}
+
+a:visited {
+    color: var(--color-link-visited);
+}
+
+a:hover {
+    color: var(--color-link-hover);
+}
+
+/* ─── Container & positioning ─────────────────────────────────────────────── */
+.search {
+  width: 100%;
+  margin: 2rem 0;               /* space above & below */
+  display: flex;
+  justify-content: center;      /* center on page */
+}
+
+/* ─── The big, pill‑shaped input ───────────────────────────────────────────── */
+.search-input {
+  width: 60%;                   /* adjust to taste */
+  max-width: 500px;
+  height: 2.5rem;               /* nice tall bar */
+  padding: 0 1rem 0 4rem;       /* room for an icon if you add one */
+
+  font-size: 1.0rem;            /* large text */
+  font-family: var(--text-font);
+  text-align: left;
+
+  background-color: var(--color2);       /* #565769—mid‑tone grey */
+  color: var(--foreground);              /* your wal fg */
+  border: 1px solid var(--color4);       /* highlight border (#606590) */
+  border-radius: 2rem;                   /* pill shape */
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);  /* subtle depth */
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--color6);  /* #489BB1—your accent teal */
+}
+
+.search-input::placeholder {
+  /* if you ever add placeholder text, keep it invisible */
+  color: transparent;
+}

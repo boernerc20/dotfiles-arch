@@ -1,0 +1,95 @@
+{
+  "font": "JetBrainsMono Nerd Font:size=16",
+  "height": 42,
+  "spacing": 6,
+  "reload_style_on_change": true,
+
+  // order and grouping
+  "modules-left": [
+    "custom/distro",
+    "custom/hardware",
+    "pulseaudio",
+    "mpris"
+  ],
+  "modules-center": [
+    "hyprland/workspaces"
+  ],
+  "modules-right": [
+    "clock",
+    "custom/weather",
+    "custom/network-bluetooth",
+    "custom/power"
+  ],
+
+    // hardware stats
+  "custom/distro": {
+    "exec": "~/.config/waybar/scripts/distro_icon.sh",
+    "format": "{}",
+    "interval": 0
+  },
+
+  // hardware stats
+  "custom/hardware": {
+    "exec": "~/.config/waybar/scripts/hardware.sh",
+    "interval": 5,
+    "format": "{}"
+  },
+
+  // clock
+  "clock": {
+    "format": "󰥔 {:%I:%M %p  󰃭 %a %b %d} ",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+
+  // workspaces (Hyprland)
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "active": "  ",
+      "default": "  ",
+      "empty":   "  "
+    },
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4, 5]
+    }
+  },
+
+  // weather
+  "custom/weather": {
+    "exec": "~/.config/waybar/scripts/weather.sh",
+    "interval": 600,
+    "format": "{}"
+  },
+
+  // network + Bluetooth
+  "custom/network-bluetooth": {
+    "exec": "~/.config/waybar/scripts/network_bluetooth.sh",
+    "interval": 10,
+    "format": "{}"
+  },
+
+  // power menu icon
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": false,
+    "on-click": "~/.config/waybar/scripts/power_menu.sh"
+  },
+
+  // mpris
+  "mpris": {
+    "format": "󰝚 {artist} - {title}",
+    "player": "spotify" 
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",             // eg. "42%"
+    "format-muted": "󰝟 MUTE",
+    "format-icons": ["","",""] // icon changes at 0, 30, 70, 100%
+  },
+
+  "custom/volume": {
+    "exec":     "~/.config/waybar/scripts/volume.sh",
+    "interval": 1,
+    "format":   "{}"
+  }
+}

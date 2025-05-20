@@ -1,0 +1,83 @@
+/* 2) global font + reset */
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 16px;
+  color: @color4;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+}
+
+/* 3) bar itself transparent */
+window#waybar {
+  all: unset;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+/* 4) style each side panel (left/center/right) */
+.modules-left,
+.modules-center,
+.modules-right {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* 5) Per-module "bubble" style */
+#clock,
+#custom-weather,
+#custom-network-bluetooth,
+#custom-hardware,
+#custom-volume,
+#battery,
+#bluetooth,
+#network,
+#mpris,
+#hyprland-workspaces,
+#pulseaudio {
+  background-color: alpha(@background, 0.6);
+  border-radius: 12px;
+  margin: 6px 5px;
+  padding: 4px 10px;
+  color: @color2;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+#custom-distro {
+  background-color: alpha(@background, 0.6);
+  border-radius: 12px;
+  margin: 6px 5px;
+  padding: 4px 10px 4px 10px;
+  padding-right: 6px;
+  color: @color2;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+#custom-power {
+  background-color: alpha(@background, 0.6);
+  border-radius: 12px;
+  margin: 6px 5px;
+  padding: 4px 10px 4px 10px;
+  padding-right: 17px;
+  padding-left: 14px;
+  color: @color2;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 6) Hover tint for clickable modules */
+#mpris:hover,
+#custom-power:hover {
+  color: @background;
+  background-color: alpha(@color9, 0.4);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* 8) Tray minimal */
+#tray {
+  background-color: transparent;
+  padding: 0 5px;
+}

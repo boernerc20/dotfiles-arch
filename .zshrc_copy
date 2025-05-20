@@ -1,0 +1,36 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# ── Basic Settings ──────────────────────────────────────────────────────────
+HISTFILE=~/.histfile
+HISTSIZE=1000
+SAVEHIST=1000
+bindkey -e
+
+# completion
+autoload -Uz compinit
+compinit
+
+# Hook Pywal shell vars (if you use them very early)
+[[ -f ~/.cache/wal/colors.sh ]] && source ~/.cache/wal/colors.sh
+
+# ── Aliases ─────────────────────────────────────────────────────────────────
+alias config='nvim ~/.config/hypr/hyprland.conf'
+alias ls='ls -a'
+alias ll='ls -l'
+alias matrix='cmatrix -C blue'
+alias clock='tty-clock -c -C 4 -t'
+alias pipes='pipes.sh'
+
+# ── PowerLevel10k Setup ─────-─────────────────────────────────────────────────
+source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Start ssh-agent if not already running
+if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+  eval "$(ssh-agent -s)" > /dev/null 2>&1
+fi

@@ -1,0 +1,9 @@
+[Unit]
+Description=OpenRGB SDK Server
+
+[Service]
+ExecStart=/usr/bin/openrgb --server --startminimized
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

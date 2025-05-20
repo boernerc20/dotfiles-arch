@@ -1,0 +1,10 @@
+templates = [
+  "cava/config.cava",
+  "colors-spicetify.ini",
+  "colors-rofi-c1.rasi",
+  "colors-rofi-c2.rasi",
+  "colors-rofi-c3.rasi",
+  "colors-rofi-c4.rasi",
+  "colors-rofi-power.rasi",
+  "colors-hyprland.conf"
+]
