@@ -19,11 +19,13 @@ Here is some information about my setup:
 - Window Manager: [`hyprwm`](https://github.com/hyprwm/Hyprland)
 - Compositor: [`hyprland`](https://github.com/hyprwm/Hyprland)
 - Terminal: [`alacritty`](https://github.com/alacritty/alacritty)
-- Shell: [`zsh`](https://www.zsh.org/)
+- Shell: [`zsh`](https://www.zsh.org/) ([`p10k`](https://github.com/romkatv/powerlevel10k/))
 - Editor: [`neovim`](https://github.com/neovim/neovim)
 - Panel: [`waybar`](https://github.com/Alexays/Waybar)
 - Application Launcher: [`rofi`](https://github.com/davatorium/rofi)
 - File Manager: [`pcmanfm`](https://github.com/lxde/pcmanfm)
+- Browser: [`firefox`](https://www.mozilla.org/en-US/firefox/linux/)
+- PC Lights: [`openrgb`](https://openrgb.org/)
 
 <a name="showcase"/>
 
@@ -33,7 +35,7 @@ Here is some information about my setup:
 
 ### <samp>Colorschemes</samp>
 
-Here are five different colorschemes (using Pywal) and can be changed based on the Wallpapers in `~/Pictures/Wallpapers`
+Here are five different colorschemes (using Pywal) based on the wallpapers in `~/assets/wallpapers`
 
 ![overview-1](assets/preview-1.png)
 ![overview-2](assets/preview-2.png)
