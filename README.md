@@ -27,10 +27,6 @@ Here is some information about my setup:
 
 ## :camera: <samp>Showcase</samp>
 
-<a name="overview"/>
-
-### <samp>Colorschemes</samp>
-
 Here are five different colorschemes (using Pywal) based on the wallpapers in `~/assets/wallpapers`. The colorscheme automatically changes depending on the wallpaper:
 
 COLORSCHEME 1
