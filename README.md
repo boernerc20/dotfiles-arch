@@ -8,10 +8,6 @@
 
 <!-- <https://github.com/prasanthrangan/hyprdots/assets/106020512/7f8fadc8-e293-4482-a851-e9c6464f5265> -->
 
-<div style="flex:1;padding: 11px 0px 0px 10px">
-<img src="assets/showcase.jpg" alt="" align="right" width="350px">
-</div>
-
 This is my personal repository for my Arch dotfiles.
 
 Here is some information about my setup: 
@@ -35,18 +31,22 @@ Here is some information about my setup:
 
 ### <samp>Colorschemes</samp>
 
-Here are five different colorschemes (using Pywal) based on the wallpapers in `~/assets/wallpapers`
+Here are five different colorschemes (using Pywal) based on the wallpapers in `~/assets/wallpapers`. The colorscheme automatically changes depending on the wallpaper:
 
-![overview-1](assets/preview-1.png)
-![overview-2](assets/preview-2.png)
-![overview-3](assets/showcase-discord-ranger.png)
-![overview-4](assets/showcase-firefox.png)
-![overview-5](assets/showcase-english.png)
-![overview-6](assets/showcase-neovim.png)
-![overview-7](assets/showcase-obsidian.png)
-![overview-8](assets/showcase-zotero-obsidian.png)
-![overview-9](assets/showcase-spotify.png)
-![overview-10](assets/showcase-screen-lock.png)
+COLORSCHEME 1
+![overview-1](assets/color-1.png)
+
+COLORSCHEME 2
+![overview-2](assets/color-2.png)
+
+COLORSCHEME 3
+![overview-3](assets/color-3.png)
+
+COLORSCHEME 4
+![overview-4](assets/color-4.png)
+
+COLORSCHEME 5
+![overview-5](assets/color-5.png)
 
 <h2></h2>
 
@@ -60,9 +60,10 @@ These rofi configurations are highly based on [adi1090x/rofi](https://github.com
 
 ##### Rofi app launchers, directory menu and windows menu
 
-![app-menu](assets/app-menu.png)
-![directory-menu](assets/directory-menu.png)
-![windows-menu](assets/windows-menu.png)
+![menu1](assets/rofi-1.png)
+![menu2](assets/rofi-2.png)
+![menu3](assets/rofi-3.png)
+![menu4](assets/rofi-4.png)
 
 <h2></h2>
 
@@ -82,25 +83,19 @@ These rofi configurations are highly based on [adi1090x/rofi](https://github.com
 
 ### <samp>Background Wallpaper</samp>
 
-Copy the wallpapers into your `~/Pictures` folder:
+Copy the wallpapers into your `~/Pictures/Wallpapers` folder:
 
 ```sh
-cp -r ~/Downloads/dotfiles/wallpapers ~/Pictures
+cp -r ~/Downloads/dotfiles-arch/wallpapers ~/Pictures/Wallpapers
 ```
 
-We will use `feh` to set up the wallpaper.
-Add the following into your `~/.config/bspwm/bspwmrc` (see [`mine`](https://github.com/HynDuf7/dotfiles/blob/main/.config/bspwm/bspwmrc)):
-
-```sh
-feh --bg-fill ~/Pictures/hollow-knight.png &
-```
+`hyprpaper` is used to set the wallpaper in `hyprland.conf` using `wal-hypr.sh`. Different wallpapers can be used by changing the binds that call the main wal script.
 
 <h2></h2>
 
 <a name="firefox"/>
 
 ### <samp>Firefox</samp>
-
 
 <h2></h2>
 
@@ -121,6 +116,5 @@ feh --bg-fill ~/Pictures/hollow-knight.png &
 
 - `README.md` inspired by [HynDuf/dotfiles](https://github.com/HynDuf/dotfiles) and [HyDE-Project/HyDE](https://github.com/HyDE-Project/HyDE)
 - [r/unixporn](https://www.reddit.com/r/unixporn/) making me want to rice my system everyday
-- 
 
 <h2 align="center"> ━━━━━━  ❖  ━━━━━━ </h2>
