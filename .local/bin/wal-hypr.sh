@@ -36,7 +36,10 @@ bash /home/chris/.local/bin/wal-rofi.sh "$WP"
 
 # 10) Set hyprlock
 ln -sf "$WP" "$HOME/.current_wallpaper"
- 
+
+# 11) Animated ASCII
+/home/chris/.config/neofetch/recolor_from_wal.py
+
 # 9) Set spotify
 # bash /home/chris/.config/spicetify/Themes/Pywal/update-colors.sh
 # spicetify apply

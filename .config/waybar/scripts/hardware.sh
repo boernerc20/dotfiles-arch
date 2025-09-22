@@ -3,6 +3,7 @@
 # ─── Icons ─────────────────────────────────────────────────────────────────────
 cpu_icon=""
 mem_icon=""
+gpu_icon="󰘚"
 temp_icon=""
 
 # ─── CPU USAGE ─────────────────────────────────────────────────────────────────
@@ -43,12 +44,11 @@ else
 fi
 
 # ─── CPU TEMPERATURE ──────────────────────────────────────────────────────────
-if [[ -r /sys/class/thermal/thermal_zone0/temp ]]; then
-  rawtemp=$(< /sys/class/thermal/thermal_zone0/temp)
-  temp=$(( rawtemp / 1000 ))
-else
-  temp="N/A"
-fi
+temp=$(paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) \
+  | awk '/x86_pkg_temp/ { printf("%.0f", $2 / 1000) }')
 
-# ─── OUTPUT FOR WAYBAR ─────────────────────────────────────────────────────────
-echo "$cpu_icon ${cpu}%  $mem_icon ${mem}%  $temp_icon ${temp}°C"
+# ─── GPU USAGE (NVIDIA) ───────────────────────────────────────────────────────
+gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits)
+
+# ─── OUTPUT FOR WAYBAR ───────────────────────────────────────────────────────
+echo "$cpu_icon ${cpu}%  $mem_icon ${mem}% $gpu_icon ${gpu}% $temp_icon ${temp}°C"

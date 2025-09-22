@@ -8,7 +8,7 @@
 mode = normal
 
 # Accepts only non-negative values.
-framerate = 144
+framerate = 120
 
 # 'autosens' will attempt to decrease sensitivity if the bars peak. 1 = on, 0 = off
 # new as of 0.6.0 autosens of low values (dynamic range)
@@ -232,14 +232,14 @@ mono_option = average
 # background must also be defined in hex or remain commented out. 1 = on, 0 = off.
 # You can define as many as 8 different colors. They range from bottom to top of screen
 gradient = 1
-gradient_color_1 = "#0B0C0D"
-gradient_color_2 = "#1A4D65"
-gradient_color_3 = "#565769"
-gradient_color_4 = "#126E8D"
-gradient_color_5 = "#606590"
-gradient_color_6 = "#A26C85"
-gradient_color_7 = "#489BB1"
-gradient_color_8 = "#c2c2c2"
+gradient_color_1 = "#0c111c"
+gradient_color_2 = "#9F4D6B"
+gradient_color_3 = "#CC5A74"
+gradient_color_4 = "#D76378"
+gradient_color_5 = "#5C6F8F"
+gradient_color_6 = "#A15A88"
+gradient_color_7 = "#CE6694"
+gradient_color_8 = "#c2c3c6"
 
 [smoothing]
 

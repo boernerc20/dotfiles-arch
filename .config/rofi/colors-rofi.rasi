@@ -18,12 +18,12 @@ configuration {
 /*****----- Global Properties -----*****/
 * {
     font:                       "JetBrains Mono Nerd Font 10";
-    background:                 #0B0C0D;
-    background-alt:             #0B0C0D;
-    foreground:                 #c2c2c2;
-    selected:                   #565769;
-    active:                     #126E8D;
-    urgent:                     #1A4D65;
+    background:                 #0c111c;
+    background-alt:             #0c111c;
+    foreground:                 #c2c3c6;
+    selected:                   #CC5A74;
+    active:                     #D76378;
+    urgent:                     #9F4D6B;
 }
 
 /*****----- Main Window -----*****/
@@ -54,7 +54,7 @@ mainbox {
 imagebox {
     padding:                    20px;
     background-color:           transparent;
-    background-image:           url("~/.config/rofi/img/mclaren.png", height);
+    background-image:           url("~/.config/rofi/img/japan.png", height);
     orientation:                vertical;
     children:                   [ "inputbar", "dummy", "mode-switcher" ];
 }

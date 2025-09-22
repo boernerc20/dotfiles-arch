@@ -9,6 +9,7 @@ case "$(basename "$WALLPAPER")" in
   jig_jig.png)      MODE="c3"  ;;  # “FILES” browser
   gate.png)         MODE="c4"  ;;  # “WINDOW” switcher
   cyber_car.png)    MODE="c5"  ;;
+  japan.png)        MODE="c6"  ;;
   *)                MODE="drun";;  # fallback to APPS
 esac
 

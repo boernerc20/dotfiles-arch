@@ -15,10 +15,10 @@
     "hyprland/workspaces"
   ],
   "modules-right": [
-    "clock",
-    "custom/weather",
+    "network",
     "custom/network-bluetooth",
-    "custom/power"
+    "custom/weather",
+    "clock"
   ],
 
     // hardware stats
@@ -37,7 +37,7 @@
 
   // clock
   "clock": {
-    "format": "󰥔 {:%I:%M %p  󰃭 %a %b %d} ",
+    "format": "󰥔 {:%I:%M %p  󰃭 %a %b %d}",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
 
@@ -68,12 +68,12 @@
     "format": "{}"
   },
 
-  // power menu icon
+  /* power menu icon
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "on-click": "~/.config/waybar/scripts/power_menu.sh"
-  },
+    "on-click": "wlogout"
+  },*/
 
   // mpris
   "mpris": {
@@ -91,5 +91,20 @@
     "exec":     "~/.config/waybar/scripts/volume.sh",
     "interval": 1,
     "format":   "{}"
+  },
+
+  /*"custom/network": {
+    "exec": "~/.config/waybar/scripts/net_speed.sh",
+    "interval": 2,
+    "format": "{}"
+  }*/
+
+  "network": {
+    "interface": "eno1",
+    "interval": 2,
+    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-disconnected": "",
+    "tooltip-format-ethernet": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
+    "tooltip-format-disconnected": "No connection"
   }
 }
