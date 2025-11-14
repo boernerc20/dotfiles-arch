@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Weather with local °F 
+# Weather with local °F
 
-API_KEY="API_KEY"
-CITY="Falls Church, US"
+API_KEY="YOUR_API_KEY_HERE"
+CITY="Your City, US"
 
 ###############################################################################
 # fetch once in °F
@@ -13,7 +13,7 @@ weather=$(curl -sf \
   --data-urlencode "q=$CITY" \
   --data-urlencode "appid=$API_KEY" \
   --data-urlencode "units=imperial"
-) || { echo " Weather"; exit 1; }
+) || { echo " Weather"; exit 1; }
 
 temp_f=$(jq '.main.temp' <<<"$weather")
 desc=$(jq -r '.weather[0].main' <<<"$weather")
@@ -22,14 +22,14 @@ desc=$(jq -r '.weather[0].main' <<<"$weather")
 # icon
 ###############################################################################
 case $desc in
-  Clear)                icon="" ;;
-  Clouds)               icon="" ;;
-  Rain)                 icon="" ;;
-  Drizzle)              icon="" ;;
-  Thunderstorm)         icon="" ;;
-  Snow)                 icon="" ;;
-  Mist|Fog|Haze)        icon="" ;;
-  *)                    icon="" ;;
+  Clear)                icon="" ;;
+  Clouds)               icon="" ;;
+  Rain)                 icon="" ;;
+  Drizzle)              icon="" ;;
+  Thunderstorm)         icon="" ;;
+  Snow)                 icon="" ;;
+  Mist|Fog|Haze)        icon="" ;;
+  *)                    icon="" ;;
 esac
 
 temp=$(awk "BEGIN{printf \"%.0f\", $temp_f}")

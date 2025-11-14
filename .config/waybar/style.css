@@ -1,23 +1,23 @@
-@define-color foreground #c2c3c6;
-@define-color background #0c111c;
-@define-color cursor #c2c3c6;
+@define-color foreground #c2c1c4;
+@define-color background #0e0915;
+@define-color cursor #c2c1c4;
 
-@define-color color0 #0c111c;
-@define-color color1 #9F4D6B;
-@define-color color2 #CC5A74;
-@define-color color3 #D76378;
-@define-color color4 #5C6F8F;
-@define-color color5 #A15A88;
-@define-color color6 #CE6694;
-@define-color color7 #c2c3c6;
-@define-color color8 #5b6170;
-@define-color color9 #9F4D6B;
-@define-color color10 #CC5A74;
-@define-color color11 #D76378;
-@define-color color12 #5C6F8F;
-@define-color color13 #A15A88;
-@define-color color14 #CE6694;
-@define-color color15 #c2c3c6;
+@define-color color0 #0e0915;
+@define-color color1 #7C8C6D;
+@define-color color2 #3353A6;
+@define-color color3 #C45BAF;
+@define-color color4 #65A1D3;
+@define-color color5 #BDA7C5;
+@define-color color6 #A7D4E9;
+@define-color color7 #c2c1c4;
+@define-color color8 #61586c;
+@define-color color9 #7C8C6D;
+@define-color color10 #3353A6;
+@define-color color11 #C45BAF;
+@define-color color12 #65A1D3;
+@define-color color13 #BDA7C5;
+@define-color color14 #A7D4E9;
+@define-color color15 #c2c1c4;
 /* 2) global font + reset */
 * {
   font-family: "JetBrainsMono Nerd Font", monospace;
