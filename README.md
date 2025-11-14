@@ -4,7 +4,7 @@
 
 <a name="about"/>
 
-## 👋 <samp>About</samp>
+## <samp>About</samp>
 
 This is my personal repository for my Arch Linux dotfiles, featuring a fully customized Hyprland environment with Pywal theming.
 
@@ -24,47 +24,27 @@ Here is some information about my setup:
 
 <a name="showcase"/>
 
-## :camera: <samp>Showcase</samp>
+## <samp>Showcase</samp>
 
-Here are five different colorschemes (using Pywal) based on the wallpapers in `~/Pictures/Wallpapers`. The colorscheme automatically changes depending on the wallpaper:
+The colorschemes (using Pywal) are based on the wallpapers in `~/Pictures/Wallpapers`. The colorscheme automatically changes depending on the wallpaper using the wal scripts in `.local`:
 
-COLORSCHEME 1
-![overview-1](assets/color-1.png)
-
-COLORSCHEME 2
-![overview-2](assets/color-2.png)
-
-COLORSCHEME 3
-![overview-3](assets/color-3.png)
-
-COLORSCHEME 4
-![overview-4](assets/color-4.png)
-
-COLORSCHEME 5
-![overview-5](assets/color-5.png)
+![example](assets/example.png)
 
 <h2></h2>
 
-<a name="rofi-utils"/>
-
-### <samp>Rofi</samp>
+### Rofi
 
 These rofi configurations are highly based on [adi1090x/rofi](https://github.com/adi1090x/rofi)
 
-<h2></h2>
-
-##### Rofi app launchers, directory menu and windows menu
-
-![menu1](assets/rofi-1.png)
-![menu2](assets/rofi-2.png)
-![menu3](assets/rofi-3.png)
-![menu4](assets/rofi-4.png)
+![rofi](assets/rofi.png)
 
 <h2></h2>
 
-##### Rofi power menu
+### Animated Neofetch
 
-![rofi-power-menu](assets/rofi-power-menu.png)
+Used Pewdiepie's animated neofetch ASCII frames and combined with my static hardware descriptors:
+
+![neo](assets/neofetch.gif)
 
 <h2></h2>
 
@@ -248,5 +228,6 @@ dotfiles-arch/
 - `README.md` inspired by [HynDuf/dotfiles](https://github.com/HynDuf/dotfiles) and [HyDE-Project/HyDE](https://github.com/HyDE-Project/HyDE)
 - Rofi configurations based on [adi1090x/rofi](https://github.com/adi1090x/rofi)
 - [r/unixporn](https://www.reddit.com/r/unixporn/) for inspiration and motivation
+- [pewdiepie/archdaemon](https://github.com/pewdiepie-archdaemon) for the animated Neofetch
 
 <h2 align="center"> ━━━━━━  ❖  ━━━━━━ </h2>
