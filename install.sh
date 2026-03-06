@@ -303,6 +303,12 @@ if [[ ! -f "$ZSHRC_LOCAL" ]]; then
 # Home Assistant token:
 # export HOME_ASSISTANT_TOKEN="your_token_here"
 
+# Jarvis-only aliases (add back on jarvis):
+# alias gotop='gotop --nvidia -s -a -p'
+# alias reload-grub='~/.local/bin/reload-grub.sh'
+# alias rgb-default='openrgb -p DEFAULT'
+# alias rgb-off='openrgb -p OFF'
+
 ZSHLOCAL
     success "Created ~/.zshrc.local"
 fi
