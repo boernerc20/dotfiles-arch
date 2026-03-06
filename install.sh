@@ -184,6 +184,20 @@ else
     success "zsh already default shell"
 fi
 
+# ── Normalize powerlevel10k path ─────────────────────────────
+# AUR package may install to a different location — ensure expected path exists
+P10K_EXPECTED="/usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme"
+if [[ ! -f "$P10K_EXPECTED" ]]; then
+    P10K_FOUND=$(find /usr/share -name "powerlevel10k.zsh-theme" 2>/dev/null | head -1)
+    if [[ -n "$P10K_FOUND" ]]; then
+        sudo mkdir -p "$(dirname "$P10K_EXPECTED")"
+        sudo ln -sf "$P10K_FOUND" "$P10K_EXPECTED"
+        success "powerlevel10k symlinked from $P10K_FOUND"
+    else
+        warn "powerlevel10k theme file not found — zsh prompt may not load"
+    fi
+fi
+
 # ── Clone dotfiles ───────────────────────────────────────────
 section "Cloning dotfiles"
 
