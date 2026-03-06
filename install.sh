@@ -133,7 +133,7 @@ PKGS=(
 
     # AUR packages
     bibata-cursor-theme
-    powerlevel10k
+    zsh-theme-powerlevel10k-git
     spicetify-cli
     pywalfox-native
     tty-clock
