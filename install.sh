@@ -38,10 +38,23 @@ section "System update"
 sudo pacman -Syu --noconfirm
 success "System updated"
 
-# ── Core packages ────────────────────────────────────────────
-section "Installing core packages"
+# ── AUR helper (yay) ─────────────────────────────────────────
+section "Installing yay (AUR helper)"
 
-PACMAN_PKGS=(
+if ! command -v yay &>/dev/null; then
+    sudo pacman -S --noconfirm --needed git base-devel
+    git clone https://aur.archlinux.org/yay.git /tmp/yay-install
+    cd /tmp/yay-install && makepkg -si --noconfirm
+    cd ~ && rm -rf /tmp/yay-install
+    success "yay installed"
+else
+    success "yay already installed"
+fi
+
+# ── All packages (yay handles both pacman + AUR) ──────────────
+section "Installing packages"
+
+PKGS=(
     # Hyprland ecosystem
     hyprland
     waybar
@@ -91,8 +104,6 @@ PACMAN_PKGS=(
     cava
     neofetch
     trash-cli
-    git
-    base-devel
     jq
     wget
     curl
@@ -119,27 +130,8 @@ PACMAN_PKGS=(
 
     # Clipboard
     wl-clipboard
-)
 
-sudo pacman -S --noconfirm --needed "${PACMAN_PKGS[@]}"
-success "Core packages installed"
-
-# ── AUR helper (yay) ─────────────────────────────────────────
-section "Installing yay (AUR helper)"
-
-if ! command -v yay &>/dev/null; then
-    git clone https://aur.archlinux.org/yay.git /tmp/yay-install
-    cd /tmp/yay-install && makepkg -si --noconfirm
-    cd ~ && rm -rf /tmp/yay-install
-    success "yay installed"
-else
-    success "yay already installed"
-fi
-
-# ── AUR packages ─────────────────────────────────────────────
-section "Installing AUR packages"
-
-AUR_PKGS=(
+    # AUR packages
     bibata-cursor-theme
     powerlevel10k
     spicetify-cli
@@ -148,8 +140,8 @@ AUR_PKGS=(
     pipes.sh
 )
 
-yay -S --noconfirm --needed "${AUR_PKGS[@]}"
-success "AUR packages installed"
+yay -S --noconfirm --needed "${PKGS[@]}"
+success "Packages installed"
 
 # ── Services ─────────────────────────────────────────────────
 section "Enabling services"
