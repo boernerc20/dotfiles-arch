@@ -140,7 +140,7 @@ PKGS=(
     pipes.sh
 )
 
-yay -S --noconfirm --needed "${PKGS[@]}"
+yay -S --noconfirm --needed --answerdiff None --answerclean None "${PKGS[@]}"
 success "Packages installed"
 
 # ── Services ─────────────────────────────────────────────────
