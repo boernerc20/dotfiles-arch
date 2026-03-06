@@ -4,11 +4,16 @@
 # Lockfile to prevent concurrent runs
 LOCKFILE="/tmp/wal-hypr.lock"
 if [ -e "$LOCKFILE" ]; then
-    echo "Another instance is running, skipping..."
-    exit 0
+    PID=$(cat "$LOCKFILE" 2>/dev/null)
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Another instance is running (PID $PID), skipping..."
+        exit 0
+    else
+        rm -f "$LOCKFILE"
+    fi
 fi
+echo $$ > "$LOCKFILE"
 trap "rm -f $LOCKFILE" EXIT
-touch "$LOCKFILE"
 
 WP="$1"
 if [[ -z "$WP" || ! -f "$WP" ]]; then
