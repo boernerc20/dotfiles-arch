@@ -360,6 +360,25 @@ sudo sed -i 's/#HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=ign
 
 success "Lid close will suspend"
 
+# ── XDG user dirs ────────────────────────────────────────────
+section "Creating XDG user directories"
+
+sudo pacman -S --noconfirm --needed xdg-user-dirs
+xdg-user-dirs-update
+mkdir -p "$HOME/pics/wallpapers" "$HOME/pics/screenshots" "$HOME/projects"
+success "User directories created"
+
+# ── Ensure ~/.local/bin in PATH for this session ─────────────
+export PATH="$HOME/.local/bin:$PATH"
+
+# ── pywalfox native setup ────────────────────────────────────
+section "Setting up pywalfox"
+
+if command -v pywalfox &>/dev/null; then
+    pywalfox install 2>/dev/null || warn "pywalfox install failed — run manually after opening Firefox once"
+    success "pywalfox configured"
+fi
+
 # ── Done ─────────────────────────────────────────────────────
 section "Installation complete!"
 
@@ -373,13 +392,13 @@ ${GREEN}Next steps:${NC}
   2. Set your HA token and any machine env vars:
      ${CYAN}nvim ~/.zshrc.local${NC}
 
-  3. Reboot and Hyprland will start via ly:
+  3. Reboot into Hyprland via ly:
      ${CYAN}sudo reboot${NC}
 
-  4. After first boot, set a wallpaper to generate full theme:
+  4. After first boot, set a wallpaper to generate the full theme:
      ${CYAN}Super+Ctrl+1${NC} through ${CYAN}Super+Ctrl+8${NC}
 
-${YELLOW}Note:${NC} Spotify + Spicetify must be installed manually from AUR after reboot:
+${YELLOW}Note:${NC} Spotify + Spicetify must be installed manually after reboot:
   ${CYAN}yay -S spotify${NC}
   ${CYAN}spicetify backup apply${NC}
 "
