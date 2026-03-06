@@ -151,7 +151,25 @@ section "Enabling services"
 
 sudo systemctl enable NetworkManager
 sudo systemctl enable tlp
-sudo systemctl enable ly
+# Display manager — try ly, fall back to greetd
+if systemctl enable ly 2>/dev/null; then
+    success "ly display manager enabled"
+else
+    warn "ly failed, installing greetd as fallback"
+    yay -S --noconfirm --needed greetd greetd-tuigreet
+    sudo mkdir -p /etc/greetd
+    sudo tee /etc/greetd/config.toml > /dev/null <<'GREETEOF'
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --remember --cmd Hyprland"
+user = "greeter"
+GREETEOF
+    sudo systemctl enable greetd
+    success "greetd display manager enabled"
+fi
+
 sudo systemctl enable bluetooth
 
 success "Services enabled"
