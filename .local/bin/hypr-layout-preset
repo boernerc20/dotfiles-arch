@@ -1,0 +1,111 @@
+#!/bin/bash
+# Hyprland layout preset manager
+# Quick keybindings to apply common layout arrangements
+
+# Debug logging
+echo "$(date): hypr-layout-preset called with: $1" >> /tmp/hypr-layout-debug.log
+
+# Get monitor dimensions using jq
+MONITOR_WIDTH=$(hyprctl monitors -j | jq '.[0].width')
+MONITOR_HEIGHT=$(hyprctl monitors -j | jq '.[0].height')
+
+# Get gap size from config (default 5)
+GAPS_IN=5
+GAPS_OUT=5
+
+case "$1" in
+    thirds)
+        # Three equal columns (33.33% each)
+        # Calculate exact dimensions: (width - outer_gaps - inner_gaps) / 3
+        # With 3 windows: 2 outer gaps (left & right) + 2 inner gaps (between windows)
+        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN * 2))
+        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
+        WINDOW_WIDTH=$((USABLE_WIDTH / 3))
+
+        echo "Thirds: Monitor=$MONITOR_WIDTH, Usable=$USABLE_WIDTH, Per Window=$WINDOW_WIDTH" >> /tmp/hypr-layout-debug.log
+
+        # Focus leftmost window and resize
+        hyprctl dispatch movefocus l
+        hyprctl dispatch movefocus l
+        hyprctl dispatch movefocus l
+        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+
+        # Move to second window and resize
+        hyprctl dispatch movefocus r
+        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+
+        # Move to third window and resize
+        hyprctl dispatch movefocus r
+        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+
+        echo "Resized 3 windows to ${WINDOW_WIDTH}px each" >> /tmp/hypr-layout-debug.log
+        ;;
+
+    main-sidebar)
+        # Main window (66%) + sidebar (33%)
+        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN))
+        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
+        MAIN_WIDTH=$((USABLE_WIDTH * 2 / 3))
+        SIDE_WIDTH=$((USABLE_WIDTH / 3))
+
+        # Focus leftmost and resize to 66%
+        hyprctl dispatch movefocus l
+        hyprctl dispatch movefocus l
+        hyprctl dispatch resizeactive exact ${MAIN_WIDTH} ${MONITOR_HEIGHT}
+
+        # Focus right window and resize to 33%
+        hyprctl dispatch movefocus r
+        hyprctl dispatch resizeactive exact ${SIDE_WIDTH} ${MONITOR_HEIGHT}
+        ;;
+
+    half)
+        # Two equal halves (50/50)
+        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN))
+        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
+        WINDOW_WIDTH=$((USABLE_WIDTH / 2))
+
+        # Resize both windows
+        hyprctl dispatch movefocus l
+        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+        hyprctl dispatch movefocus r
+        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+        ;;
+
+    master)
+        # Switch to master layout
+        hyprctl keyword general:layout master
+        echo "Switched to master layout" >> /tmp/hypr-layout-debug.log
+        ;;
+
+    dwindle)
+        # Switch to dwindle layout (default)
+        hyprctl keyword general:layout dwindle
+        echo "Switched to dwindle layout" >> /tmp/hypr-layout-debug.log
+        ;;
+
+    reset)
+        # Reset all splits to equal sizing
+        hyprctl dispatch movefocus l
+        hyprctl dispatch movefocus l
+        hyprctl dispatch splitratio exact 0.5
+        hyprctl dispatch movefocus r
+        hyprctl dispatch splitratio exact 0.5
+        echo "Reset splits to default" >> /tmp/hypr-layout-debug.log
+        ;;
+
+    *)
+        echo "Hyprland Layout Preset Manager"
+        echo ""
+        echo "Usage: hypr-layout-preset {thirds|main-sidebar|half|master|dwindle|reset}"
+        echo ""
+        echo "  thirds        - Three equal columns (33/33/33)"
+        echo "  main-sidebar  - Main + sidebar (66/33)"
+        echo "  half          - Two equal halves (50/50)"
+        echo "  master        - Switch to master layout"
+        echo "  dwindle       - Switch to dwindle layout"
+        echo "  reset         - Reset all windows to equal size"
+        echo ""
+        echo "Note: Layout presets work best with 2-3 tiled windows on current workspace"
+        echo "Monitor: ${MONITOR_WIDTH}x${MONITOR_HEIGHT}"
+        ;;
+esac

@@ -44,8 +44,19 @@ else
 fi
 
 # ─── CPU TEMPERATURE ──────────────────────────────────────────────────────────
-temp=$(paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp) \
-  | awk '/x86_pkg_temp/ { printf("%.0f", $2 / 1000) }')
+# Works for both Intel (x86_pkg_temp) and AMD (k10temp)
+temp=$(
+  for hwmon in /sys/class/hwmon/hwmon*; do
+    name=$(cat "$hwmon/name" 2>/dev/null)
+    if [[ "$name" == "k10temp" || "$name" == "coretemp" ]]; then
+      temp_input=$(cat "$hwmon/temp1_input" 2>/dev/null)
+      if [[ -n "$temp_input" ]]; then
+        echo $((temp_input / 1000))
+        break
+      fi
+    fi
+  done
+)
 
 # ─── GPU USAGE (NVIDIA) ───────────────────────────────────────────────────────
 gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits)

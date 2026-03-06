@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Pick your interface (auto-detect the first non-loopback with carrier)
-INTERFACE="eno1"
+INTERFACE=$(ip route | awk '/default/ {print $5}' | head -n1)
 
 # Nerd Font icons
 ICON_DOWN=""  # nf-mdi-download

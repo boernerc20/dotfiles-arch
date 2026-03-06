@@ -1,0 +1,88 @@
+* {
+    background-image: none;
+    font-size: 16px;
+}
+
+@import url("file:///home/chris/.cache/wal/colors-waybar.css");
+
+window {
+    background-color: transparent; 
+}
+
+button {
+    color: @foreground;
+    background-color: @background;
+    outline-style: none;
+    border: none;
+    border-width: 0px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20%;
+    border-radius: 0px;
+    box-shadow: none;
+    text-shadow: none;
+    animation: gradient_f 20s ease-in infinite;
+}
+
+button:focus {
+    background-color: @color4;
+    background-size: 30%;
+}
+
+button:hover {
+    background-color: @color5;
+    background-size: 40%;
+    border-radius: 12px;
+    animation: gradient_f 20s ease-in infinite;
+    transition: all 0.3s cubic-bezier(.55,0.0,.28,1.682);
+}
+
+button:hover#lock {
+    border-radius: 12px;
+    margin : 8px 0px 8px 8px;
+}
+
+button:hover#logout,
+button:hover#suspend,
+button:hover#shutdown,
+button:hover#hibernate {
+    margin: 8px 0px 8px 0px;
+}
+
+button:hover#reboot {
+    border-radius: 12px;
+    margin : 8px 8px 8px 0px;
+}
+
+/* Buttons with icons (white set chosen for dark bg) */
+#lock {
+    background-image: url("/home/chris/.config/wlogout/icons/lock_white.png");
+    border-radius: 12px 0px 0px 12px;
+    margin: 8px 0px 8px 8px;
+}
+
+#logout {
+    background-image: url("/home/chris/.config/wlogout/icons/logout_white.png");
+    margin: 8px 0px 8px 0px;
+}
+
+#suspend {
+    background-image: url("/home/chris/.config/wlogout/icons/suspend_white.png");
+    margin: 8px 0px 8px 0px;
+}
+
+#shutdown {
+    background-image: url("/home/chris/.config/wlogout/icons/shutdown_white.png");
+    margin: 8px 0px 8px 0px;
+}
+
+#hibernate {
+    background-image: url("/home/chris/.config/wlogout/icons/hibernate_white.png");
+    margin: 8px 0px 8px 0px;
+}
+
+#reboot {
+    background-image: url("/home/chris/.config/wlogout/icons/reboot_white.png");
+    border-radius: 0px 12px 12px 0px;
+    margin: 8px 8px 8px 0px;
+}

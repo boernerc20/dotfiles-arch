@@ -45,9 +45,9 @@
   "hyprland/workspaces": {
     "format": "{icon}",
     "format-icons": {
-      "active": "  ",
-      "default": "  ",
-      "empty":   "  "
+      "active": "  ",
+      "default": "  ",
+      "empty":   "  "
     },
     "persistent-workspaces": {
       "*": [1, 2, 3, 4, 5]
@@ -78,13 +78,13 @@
   // mpris
   "mpris": {
     "format": "󰝚 {artist} - {title}",
-    "player": "spotify"
+    "player": "spotify" 
   },
 
   "pulseaudio": {
     "format": "{icon} {volume}%",             // eg. "42%"
     "format-muted": "󰝟 MUTE",
-    "format-icons": ["","",""] // icon changes at 0, 30, 70, 100%
+    "format-icons": ["","",""] // icon changes at 0, 30, 70, 100%
   },
 
   "custom/volume": {
@@ -98,23 +98,23 @@
     "interval": 2,
     "format": "{}"
   }*/
-
+  
 
   // ethernet up/down
-  "network": {
-    "interface": "eno1",
-    "interval": 2,
-    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}",
-    "tooltip-format-ethernet": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
-    "tooltip-format-disconnected": "No connection"
+  "network": { 
+    "interface": "enp7s0", 
+    "interval": 2, 
+    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
+    "tooltip-format-ethernet": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
+    "tooltip-format-disconnected": "No connection" 
   }
 
   /* wifi up/down
-  "network": {
-    "interface": "wlp4s0",
-    "interval": 2,
-    "format-wifi": " {bandwidthDownBytes}  {bandwidthUpBytes}",
-    "tooltip-format-wifi": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
-    "tooltip-format-disconnected": "No connection"
+  "network": { 
+    "interface": "wlp4s0", 
+    "interval": 2, 
+    "format-wifi": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
+    "tooltip-format-wifi": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
+    "tooltip-format-disconnected": "No connection" 
   }*/
 }

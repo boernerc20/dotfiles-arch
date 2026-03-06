@@ -4,30 +4,30 @@
  **/
 
 /*****----- Configuration -----*****/
-configuration {
+configuration {{
     modi:                       "drun,run,filebrowser,window";
     show-icons:                 true;
     display-drun:               "APPS";
     display-run:                "RUN";
     display-filebrowser:        "FILES";
     display-window:             "WINDOW";
-    drun-display-format:        "{name}";
-    window-format:              "{w} · {c} · {t}";
-}
+    drun-display-format:        "{{name}}";
+    window-format:              "{{w}} · {{c}} · {{t}}";
+}}
 
 /*****----- Global Properties -----*****/
-* {
+* {{
     font:                       "JetBrains Mono Nerd Font 10";
-    background:                 #0c111c;
-    background-alt:             #0c111c;
-    foreground:                 #c2c3c6;
-    selected:                   #CC5A74;
-    active:                     #D76378;
-    urgent:                     #9F4D6B;
-}
+    background:                 {background};
+    background-alt:             {background};
+    foreground:                 {foreground};
+    selected:                   {color2};
+    active:                     {color3};
+    urgent:                     {color1};
+}}
 
 /*****----- Main Window -----*****/
-window {
+window {{
     transparency:               "real";
     location:                   center;
     anchor:                     center;
@@ -40,39 +40,39 @@ window {
     border-radius:              15px;
     cursor:                     "default";
     background-color:           @background;
-}
+}}
 
 /*****----- Main Box -----*****/
-mainbox {
+mainbox {{
     enabled:                    true;
     spacing:                    0px;
     background-color:           transparent;
     orientation:                horizontal;
     children:                   [ "imagebox", "listbox" ];
-}
+}}
 
-imagebox {
+imagebox {{
     padding:                    20px;
     background-color:           transparent;
-    background-image:           url("~/.config/rofi/img/japan.png", height);
+    background-image:           url("~/.config/rofi/img/neon-gun.png", height);
     orientation:                vertical;
     children:                   [ "inputbar", "dummy", "mode-switcher" ];
-}
+}}
 
-listbox {
+listbox {{
     spacing:                    20px;
     padding:                    20px;
     background-color:           transparent;
     orientation:                vertical;
     children:                   [ "message", "listview" ];
-}
+}}
 
-dummy {
+dummy {{
     background-color:           transparent;
-}
+}}
 
 /*****----- Inputbar -----*****/
-inputbar {
+inputbar {{
     enabled:                    true;
     spacing:                    10px;
     padding:                    15px;
@@ -80,48 +80,48 @@ inputbar {
     background-color:           @background-alt;
     text-color:                 @foreground;
     children:                   [ "textbox-prompt-colon", "entry" ];
-}
+}}
 
-textbox-prompt-colon {
+textbox-prompt-colon {{
     enabled:                    true;
     expand:                     false;
     str:                        " ";
     background-color:           inherit;
     text-color:                 inherit;
-}
+}}
 
-entry {
+entry {{
     enabled:                    true;
     background-color:           inherit;
     text-color:                 inherit;
     cursor:                     text;
     placeholder:                "Search";
     placeholder-color:          inherit;
-}
+}}
 
 /*****----- Mode Switcher -----*****/
-mode-switcher {
+mode-switcher {{
     enabled:                    true;
     spacing:                    20px;
     background-color:           transparent;
     text-color:                 @foreground;
-}
+}}
 
-button {
+button {{
     padding:                    15px;
     border-radius:              10px;
     background-color:           @background-alt;
     text-color:                 inherit;
     cursor:                     pointer;
-}
+}}
 
-button selected {
+button selected {{
     background-color:           @selected;
     text-color:                 @foreground;
-}
+}}
 
 /*****----- Listview -----*****/
-listview {
+listview {{
     enabled:                    true;
     columns:                    1;
     lines:                      8;
@@ -137,10 +137,10 @@ listview {
     background-color:           transparent;
     text-color:                 @foreground;
     cursor:                     "default";
-}
+}}
 
 /*****----- Elements -----*****/
-element {
+element {{
     enabled:                    true;
     spacing:                    15px;
     padding:                    8px;
@@ -148,61 +148,61 @@ element {
     background-color:           transparent;
     text-color:                 @foreground;
     cursor:                     pointer;
-}
+}}
 
-element normal.normal   { background-color: inherit;   text-color: inherit; }
-element normal.urgent   { background-color: @urgent;  text-color: @foreground; }
-element normal.active   { background-color: @active;  text-color: @foreground; }
-element selected.normal { background-color: @selected;text-color: @foreground; }
-element selected.urgent { background-color: @urgent;  text-color: @foreground; }
-element selected.active { background-color: @active;  text-color: @foreground; }
+element normal.normal   {{ background-color: inherit;   text-color: inherit; }}
+element normal.urgent   {{ background-color: @urgent;  text-color: @foreground; }}
+element normal.active   {{ background-color: @active;  text-color: @foreground; }}
+element selected.normal {{ background-color: @selected;text-color: @foreground; }}
+element selected.urgent {{ background-color: @urgent;  text-color: @foreground; }}
+element selected.active {{ background-color: @active;  text-color: @foreground; }}
 
-element-icon {
+element-icon {{
     background-color:           transparent;
     text-color:                 inherit;
     size:                       32px;
     cursor:                     inherit;
-}
+}}
 
-element-text {
+element-text {{
     background-color:           transparent;
     text-color:                 inherit;
     vertical-align:             0.5;
     horizontal-align:           0.0;
-}
+}}
 
-element.alternate.normal {
+element.alternate.normal {{
     background-color: @background;
     text-color:       @foreground;
-}
+}}
 
-element.alternate.urgent {
+element.alternate.urgent {{
     background-color: @background;
     text-color:       @foreground;
-}
+}}
 
-element.alternate.active {
+element.alternate.active {{
     background-color: @background;
     text-color:       @foreground;
-}
+}}
 
 /*****----- Message & Error -----*****/
-message {
+message {{
     background-color:           transparent;
-}
+}}
 
-textbox {
+textbox {{
     padding:                    15px;
     border-radius:              10px;
     background-color:           @background-alt;
     text-color:                 @foreground;
     vertical-align:             0.5;
     horizontal-align:           0.0;
-}
+}}
 
-error-message {
+error-message {{
     padding:                    15px;
     border-radius:              20px;
     background-color:           @background;
     text-color:                 @foreground;
-}
+}}

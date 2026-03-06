@@ -1,0 +1,42 @@
+# Claude Code settings (local development)
+.claude/
+
+# Machine-specific local overrides (not shared between machines)
+.config/hypr/hyprland-local.conf
+.zshrc.local
+
+# Neofetch animated frames (generated, not needed in repo)
+.config/neofetch/frames_colour/
+.config/neofetch/frames_src/
+
+# Waybar generated style (built from wal + style-base.css)
+.config/waybar/style.css
+.config/waybar/style-backup.css
+
+# Spicetify marketplace (large, auto-installs)
+.config/spicetify/CustomApps/
+
+# Sensitive files - DO NOT COMMIT
+*.key
+*.pem
+*.env
+.env.*
+credentials.json
+secrets.json
+
+# System-specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Cache directories
+__pycache__/
+*.pyc
+.cache/
+
+# Personal notes and temporary files
+TODO.md
+NOTES.md
+scratch/

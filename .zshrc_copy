@@ -18,6 +18,12 @@ compinit
 # Default Editor
 export EDITOR=nvim
 
+# ── Machine-Specific GPU Settings ───────────────────────────────────────────
+# Loaded from ~/.zshrc.local (not tracked in dotfiles)
+# Jarvis (NVIDIA): export __GLX_VENDOR_LIBRARY_NAME=nvidia etc.
+# Friday (laptop): check GPU and set accordingly
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
 # Hook Pywal shell vars (if you use them very early)
 [[ -f ~/.cache/wal/colors.sh ]] && source ~/.cache/wal/colors.sh
 
@@ -32,9 +38,26 @@ alias public-ip='curl -4 ifconfig.me'
 alias cpp='rsync -ah --progress'
 alias rm='trash-put'
 alias neo='~/.config/neofetch/animated-neofetch.sh'
-alias rgb-default='openrgb -p DEFAULT'
-alias rgb-off='openrgb -p OFF'
+alias master='sudo cat /lockbox/pass/master'
+alias cmds='nvim ~/projects/linux/03-configuration/cmds'
 alias gotop='gotop --nvidia -s -a -p'
+alias mp4-gif='/home/chris/projects/linux/04-utilities/mp4-to-gif'
+alias rpi-imager='sudo -E rpi-imager'
+alias venv='source venv/bin/activate'
+alias ccm='ccm --plan pro'
+
+# ── Yazi Integration ────────────────────────────────────────────────────────
+# Wrapper function to change directory on exit
+function yy() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
+}
+# Quick alias for yazi
+alias fm='yy'
 
 # ── PowerLevel10k Setup ─────-─────────────────────────────────────────────────
 source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
@@ -45,8 +68,8 @@ if ! pgrep -u "$USER" ssh-agent > /dev/null; then
   eval "$(ssh-agent -s)" > /dev/null 2>&1
 fi
 
-# Add SSH key silently (customize with your key path)
-# ssh-add -q ~/.ssh/id_ed25519 2>/dev/null
+# Add SSH key silently
+ssh-add -q ~/.ssh/id_ed25519 2>/dev/null
 
 # Python 3.10 with PIP Setup
 export PATH=$PATH:/opt/android-sdk/platform-tools
@@ -63,4 +86,14 @@ zstyle ':completion:*' menu select
 . "$HOME/.local/bin/env"
 
 # opencode
-export PATH=$HOME/.opencode/bin:$PATH
+export PATH=/home/chris/.opencode/bin:$PATH
+
+export PATH=$PATH:/home/chris/.spicetify
+
+# bun completions
+[ -s "/home/chris/.bun/_bun" ] && source "/home/chris/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+export HOME_ASSISTANT_TOKEN="your_token_here"  # set in ~/.zshrc.local

@@ -1,0 +1,28 @@
+##############################################
+# hyprland-local.conf — machine-specific overrides
+# Copy to ~/.config/hypr/hyprland-local.conf
+# DO NOT commit this file (it's in .gitignore)
+##############################################
+
+# ── MONITOR ──────────────────────────────────────────────────────────────────
+# Jarvis (ultrawide):
+# monitor=DP-3, 3440x1440@120, 0x0, 1
+
+# Friday (laptop) — check yours with: hyprctl monitors
+# monitor=eDP-1, 1920x1080@60, 0x0, 1.25
+
+# ── GPU ENV VARS ─────────────────────────────────────────────────────────────
+# Jarvis (NVIDIA discrete):
+# env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+# env = GBM_BACKEND,nvidia-drm
+# env = __GL_GSYNC_ALLOWED,1
+# env = __GL_VRR_ALLOWED,1
+
+# Friday (Intel/AMD iGPU): no special vars needed
+
+# ── AUTOSTART (machine-specific) ─────────────────────────────────────────────
+# Jarvis only:
+# exec-once = openrgb -p DEFAULT
+
+# Friday: add laptop-specific autostart here
+# exec-once = nm-applet --indicator
