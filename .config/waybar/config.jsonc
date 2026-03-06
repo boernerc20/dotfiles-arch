@@ -100,21 +100,14 @@
   }*/
   
 
-  // ethernet up/down
-  "network": { 
-    "interface": "enp7s0", 
-    "interval": 2, 
-    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
-    "tooltip-format-ethernet": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
-    "tooltip-format-disconnected": "No connection" 
+  // network — no interface hardcoded, auto-detects ethernet or wifi
+  "network": {
+    "interval": 2,
+    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-wifi": "  {bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-disconnected": " disconnected",
+    "tooltip-format-ethernet": "{ifname}\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
+    "tooltip-format-wifi": "{ifname} ({essid})\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
+    "tooltip-format-disconnected": "No connection"
   }
-
-  /* wifi up/down
-  "network": { 
-    "interface": "wlp4s0", 
-    "interval": 2, 
-    "format-wifi": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
-    "tooltip-format-wifi": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
-    "tooltip-format-disconnected": "No connection" 
-  }*/
 }

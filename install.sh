@@ -100,6 +100,9 @@ PACMAN_PKGS=(
     unzip
     zip
 
+    # Browser
+    firefox
+
     # Display manager
     ly
 
@@ -110,6 +113,12 @@ PACMAN_PKGS=(
     # Screenshot deps
     grim
     slurp
+
+    # Fonts + cursor support
+    xcursor-themes
+
+    # Clipboard
+    wl-clipboard
 )
 
 sudo pacman -S --noconfirm --needed "${PACMAN_PKGS[@]}"
@@ -298,13 +307,26 @@ ZSHLOCAL
     success "Created ~/.zshrc.local"
 fi
 
+# ── Spicetify initial setup ──────────────────────────────────
+section "Configuring Spicetify"
+
+# Set prefs_path to this user's spotify prefs
+SPICETIFY_CFG="$HOME/.config/spicetify/config-xpui.ini"
+if [[ -f "$SPICETIFY_CFG" ]]; then
+    sed -i "s|^prefs_path.*|prefs_path             = $HOME/.config/spotify/prefs|" "$SPICETIFY_CFG"
+    success "Spicetify prefs_path set (run 'spicetify backup apply' after installing Spotify)"
+fi
+
 # ── Initial pywal run ────────────────────────────────────────
 section "Generating initial pywal colors"
 
-FIRST_WALLPAPER=$(find "$HOME/pics/wallpapers" -name "*.png" -o -name "*.jpg" | head -1)
+FIRST_WALLPAPER=$(find "$HOME/pics/wallpapers" -maxdepth 1 \( -name "*.png" -o -name "*.jpg" \) 2>/dev/null | head -1)
 
 if [[ -n "$FIRST_WALLPAPER" ]]; then
-    wal -i "$FIRST_WALLPAPER" -n 2>/dev/null && success "Pywal colors generated from $FIRST_WALLPAPER"
+    wal -i "$FIRST_WALLPAPER" -n && success "Pywal colors generated from $FIRST_WALLPAPER"
+    # Build initial waybar style
+    cat "$HOME/.cache/wal/colors-waybar.css" "$HOME/.config/waybar/style-base.css" \
+        > "$HOME/.config/waybar/style.css" 2>/dev/null || true
 else
     warn "No wallpaper found — run 'wal -i ~/pics/wallpapers/<image>' after first boot"
 fi

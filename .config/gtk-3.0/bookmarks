@@ -1,7 +1,4 @@
-file:///home/chris/docs docs
-file:///home/chris/downloads downloads
-file:///home/chris/pics pics
-file:///mnt/secondary secondary
-file:///mnt mnt
-file:///home/chris/.local/share/Trash Trash
-file:///mnt/secondary/ai/stable-diffusion-webui/outputs outputs
+file:///home/$USER/docs docs
+file:///home/$USER/downloads downloads
+file:///home/$USER/pics pics
+file:///home/$USER/.local/share/Trash Trash

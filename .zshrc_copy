@@ -41,7 +41,7 @@ alias neo='~/.config/neofetch/animated-neofetch.sh'
 alias master='sudo cat /lockbox/pass/master'
 alias cmds='nvim ~/projects/linux/03-configuration/cmds'
 alias gotop='gotop --nvidia -s -a -p'
-alias mp4-gif='/home/chris/projects/linux/04-utilities/mp4-to-gif'
+alias mp4-gif='$HOME/projects/linux/04-utilities/mp4-to-gif'
 alias rpi-imager='sudo -E rpi-imager'
 alias venv='source venv/bin/activate'
 alias ccm='ccm --plan pro'
@@ -86,14 +86,15 @@ zstyle ':completion:*' menu select
 . "$HOME/.local/bin/env"
 
 # opencode
-export PATH=/home/chris/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
 
-export PATH=$PATH:/home/chris/.spicetify
+export PATH=$PATH:$HOME/.spicetify
 
 # bun completions
-[ -s "/home/chris/.bun/_bun" ] && source "/home/chris/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-export HOME_ASSISTANT_TOKEN="your_token_here"  # set in ~/.zshrc.local
+# Machine-specific env vars (tokens, GPU settings, etc.)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

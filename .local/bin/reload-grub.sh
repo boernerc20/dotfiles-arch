@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Robust GRUB refresh for UEFI + Btrfs (subvol=@) + dual boot.
 # Assumes:
-#   - ESP is mounted at /efi via /etc/fstab (UUID=193C-297D in your case)
+#   - ESP is mounted at /efi via /etc/fstab
 #   - /etc/default/grub includes: GRUB_DISABLE_OS_PROBER=false and rootflags=subvol=@
 #   - os-prober, efibootmgr installed
 

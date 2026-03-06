@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/chris/.config/firefox/home
+WorkingDirectory=%h/.config/firefox/home
 ExecStart=/usr/bin/python3 -m http.server 8080
 Restart=on-failure
 

@@ -1,6 +1,6 @@
 {
     "label": "lock",
-    "action": "hyprlock --config /home/chris/.cache/wal/colors-hyprland.conf",
+    "action": "hyprlock --config $HOME/.cache/wal/colors-hyprland.conf",
     "text": "Lock",
     "keybind": "l"
 }

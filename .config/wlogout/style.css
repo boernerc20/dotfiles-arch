@@ -3,10 +3,10 @@
     font-size: 16px;
 }
 
-@import url("file:///home/chris/.cache/wal/colors-waybar.css");
+@import url("file:///run/user/1000/wal/colors-waybar.css");
 
 window {
-    background-color: transparent; 
+    background-color: transparent;
 }
 
 button {
@@ -56,33 +56,33 @@ button:hover#reboot {
 
 /* Buttons with icons (white set chosen for dark bg) */
 #lock {
-    background-image: url("/home/chris/.config/wlogout/icons/lock_white.png");
+    background-image: url("icons/lock_white.png");
     border-radius: 12px 0px 0px 12px;
     margin: 8px 0px 8px 8px;
 }
 
 #logout {
-    background-image: url("/home/chris/.config/wlogout/icons/logout_white.png");
+    background-image: url("icons/logout_white.png");
     margin: 8px 0px 8px 0px;
 }
 
 #suspend {
-    background-image: url("/home/chris/.config/wlogout/icons/suspend_white.png");
+    background-image: url("icons/suspend_white.png");
     margin: 8px 0px 8px 0px;
 }
 
 #shutdown {
-    background-image: url("/home/chris/.config/wlogout/icons/shutdown_white.png");
+    background-image: url("icons/shutdown_white.png");
     margin: 8px 0px 8px 0px;
 }
 
 #hibernate {
-    background-image: url("/home/chris/.config/wlogout/icons/hibernate_white.png");
+    background-image: url("icons/hibernate_white.png");
     margin: 8px 0px 8px 0px;
 }
 
 #reboot {
-    background-image: url("/home/chris/.config/wlogout/icons/reboot_white.png");
+    background-image: url("icons/reboot_white.png");
     border-radius: 0px 12px 12px 0px;
     margin: 8px 8px 8px 0px;
 }
