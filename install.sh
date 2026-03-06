@@ -140,7 +140,18 @@ PKGS=(
     pipes.sh
 )
 
-yay -S --noconfirm --needed --nocleanmenu --nodiffmenu --noeditmenu --noupgrademenu "${PKGS[@]}"
+# Disable yay interactive menus via config
+mkdir -p "$HOME/.config/yay"
+cat > "$HOME/.config/yay/config.json" <<'YAYEOF'
+{
+    "cleanmenu": false,
+    "diffmenu": false,
+    "editmenu": false,
+    "upgrademenu": false
+}
+YAYEOF
+
+yay -S --noconfirm --needed "${PKGS[@]}"
 success "Packages installed"
 
 # ── Services ─────────────────────────────────────────────────
