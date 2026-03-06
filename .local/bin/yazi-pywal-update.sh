@@ -11,8 +11,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # Paths
-PYWAL_THEME="/home/chris/.cache/wal/yazi-theme.toml"
-YAZI_THEME_DIR="/home/chris/.config/yazi"
+PYWAL_THEME="$HOME/.cache/wal/yazi-theme.toml"
+YAZI_THEME_DIR="$HOME/.config/yazi"
 YAZI_THEME="${YAZI_THEME_DIR}/theme.toml"
 
 # Check if pywal theme was generated

@@ -230,12 +230,16 @@ success "Dotfiles deployed"
 # ── Wallpapers ───────────────────────────────────────────────
 section "Setting up wallpapers"
 
-mkdir -p "$HOME/pics/wallpapers"
+mkdir -p "$HOME/pics/wallpapers/upscale"
+mkdir -p "$HOME/pics/screenshots"
 
-# Copy rofi wallpapers from dotfiles
-if [[ -d "$DOTFILES_DIR/.config/rofi/img" ]]; then
-    cp "$DOTFILES_DIR/.config/rofi/img/"* "$HOME/pics/wallpapers/"
-    info "Copied wallpapers from dotfiles"
+# Copy wallpapers from dotfiles repo
+if [[ -d "$DOTFILES_DIR/wallpapers" ]]; then
+    cp "$DOTFILES_DIR/wallpapers/"*.png "$HOME/pics/wallpapers/" 2>/dev/null || true
+    cp "$DOTFILES_DIR/wallpapers/"*.jpg "$HOME/pics/wallpapers/" 2>/dev/null || true
+    [[ -d "$DOTFILES_DIR/wallpapers/upscale" ]] && \
+        cp "$DOTFILES_DIR/wallpapers/upscale/"* "$HOME/pics/wallpapers/upscale/" 2>/dev/null || true
+    info "Copied wallpapers from dotfiles repo"
 fi
 
 success "Wallpapers ready at ~/pics/wallpapers"
