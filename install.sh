@@ -134,7 +134,6 @@ PKGS=(
     # AUR packages
     bibata-cursor-theme
     zsh-theme-powerlevel10k-git
-    spicetify-cli
     pywalfox-native
     tty-clock
     pipes.sh
@@ -232,7 +231,6 @@ CONFIG_DIRS=(
     nwg-look
     pcmanfm
     rofi
-    spicetify
     wal
     waybar
     wlogout
@@ -340,16 +338,6 @@ ZSHLOCAL
     success "Created ~/.zshrc.local"
 fi
 
-# ── Spicetify initial setup ──────────────────────────────────
-section "Configuring Spicetify"
-
-# Set prefs_path to this user's spotify prefs
-SPICETIFY_CFG="$HOME/.config/spicetify/config-xpui.ini"
-if [[ -f "$SPICETIFY_CFG" ]]; then
-    sed -i "s|^prefs_path.*|prefs_path             = $HOME/.config/spotify/prefs|" "$SPICETIFY_CFG"
-    success "Spicetify prefs_path set (run 'spicetify backup apply' after installing Spotify)"
-fi
-
 # ── Initial pywal run ────────────────────────────────────────
 section "Generating initial pywal colors"
 
@@ -425,7 +413,4 @@ ${GREEN}Next steps:${NC}
   4. After first boot, set a wallpaper to generate the full theme:
      ${CYAN}Super+Ctrl+1${NC} through ${CYAN}Super+Ctrl+8${NC}
 
-${YELLOW}Note:${NC} Spotify + Spicetify must be installed manually after reboot:
-  ${CYAN}yay -S spotify${NC}
-  ${CYAN}spicetify backup apply${NC}
 "
