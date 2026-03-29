@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Pywal post-run hook — syncs colors to Qt (qt6ct, Kvantum) and GTK (Thunar)."""
+import json, os
+
+colors_file = os.path.expanduser('~/.cache/wal/colors.json')
+output_file = os.path.expanduser('~/.cache/wal/colors-qt6ct.conf')
+
+with open(colors_file) as f:
+    c = json.load(f)
+
+co = c['colors']
+sp = c['special']
+bg     = co['color0']
+bg2    = co['color8']
+fg     = co['color7']
+fg2    = co['color15']
+accent = co['color4']
+accent2= co['color5']
+
+# --- qt6ct color scheme ---
+def palette(text, btn, light, midlight, dark, mid, txt, bright, btntxt,
+            base, win, shadow, hi, hitxt, link, linkv, altbase,
+            norole, tipbase, tiptxt):
+    return ','.join([text, btn, light, midlight, dark, mid, txt, bright, btntxt,
+                     base, win, shadow, hi, hitxt, link, linkv, altbase,
+                     norole, tipbase, tiptxt, txt, win, win, win, win])
+
+active   = palette(fg, bg2, bg2, bg2, bg, bg2, fg, fg2, fg, bg, bg, bg, accent, bg, accent, accent2, bg2, bg, bg2, fg)
+inactive = palette(bg2, bg2, bg2, bg2, bg, bg2, bg2, fg2, bg2, bg, bg, bg, bg2, fg, accent, accent2, bg2, bg, bg2, fg)
+disabled = palette(bg2, bg2, bg2, bg2, bg, bg2, bg2, bg2, bg2, bg, bg, bg, bg2, bg2, bg2, accent2, bg2, bg, bg2, bg2)
+
+with open(output_file, 'w') as f:
+    f.write(f"[ColorScheme]\nactive_colors={active}\ninactive_colors={inactive}\ndisabled_colors={disabled}\n")
+
+# --- Patch Kvantum LayanDark GeneralColors with pywal colors ---
+def lighten(h, amount):
+    h = h.lstrip('#')
+    r, g, b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
+    return '#{:02x}{:02x}{:02x}'.format(
+        min(255, r+amount), min(255, g+amount), min(255, b+amount))
+
+raw_bg  = sp['background']
+raw_fg  = sp['foreground']
+raw_c2  = co['color2']
+raw_c4  = co['color4']
+raw_c5  = co['color5']
+raw_c8  = co['color8']
+
+kvantum_colors = {
+    'window.color':                   raw_bg,
+    'base.color':                     raw_bg,
+    'alt.base.color':                 raw_bg,
+    'button.color':                   lighten(raw_bg, 18),
+    'light.color':                    lighten(raw_bg, 28),
+    'mid.light.color':                lighten(raw_bg, 22),
+    'dark.color':                     lighten(raw_bg, 5),
+    'mid.color':                      lighten(raw_bg, 12),
+    'highlight.color':                raw_c4,
+    'inactive.highlight.color':       raw_c2,
+    'text.color':                     raw_fg,
+    'window.text.color':              raw_fg,
+    'button.text.color':              raw_fg,
+    'disabled.text.color':            raw_c8,
+    'tooltip.text.color':             raw_fg,
+    'highlight.text.color':           raw_fg,
+    'link.color':                     raw_c4,
+    'link.visited.color':             raw_c5,
+    'progress.indicator.text.color':  raw_fg,
+}
+
+kvantum_cfg = os.path.expanduser('~/.config/Kvantum/LayanDark/LayanDark.kvconfig')
+with open(kvantum_cfg) as f:
+    lines = f.readlines()
+
+with open(kvantum_cfg, 'w') as f:
+    for line in lines:
+        key = line.split('=')[0].strip()
+        if key in kvantum_colors:
+            f.write(f"{key}={kvantum_colors[key]}\n")
+        else:
+            f.write(line)
+
+# --- GTK CSS for Thunar and other GTK apps ---
+gtk_css_path = os.path.expanduser('~/.config/gtk-3.0/gtk.css')
+
+BG  = sp['background']
+FG  = sp['foreground']
+C1  = co['color1']   # muted accent
+C2  = co['color2']   # selection bg
+C4  = co['color4']   # focus/active
+C8  = co['color8']   # unfocused fg
+
+gtk_css = f"""/* pywal colors — auto-generated, do not edit */
+@define-color theme_bg_color {BG};
+@define-color theme_fg_color {FG};
+@define-color theme_base_color {BG};
+@define-color theme_text_color {FG};
+@define-color theme_selected_bg_color {C2};
+@define-color theme_selected_fg_color {FG};
+@define-color insensitive_fg_color {C8};
+@define-color borders alpha({C4}, 0.3);
+
+/* Thunar sidebar and view */
+.sidebar {{ background-color: {BG}; color: {FG}; }}
+.sidebar row:selected {{ background-color: {C2}; color: {FG}; }}
+.view {{ background-color: {BG}; color: {FG}; }}
+.view:selected {{ background-color: {C2}; color: {FG}; }}
+row:selected {{ background-color: {C2}; color: {FG}; }}
+
+/* Toolbar / header */
+toolbar, .toolbar, headerbar, .titlebar {{
+    background-color: {BG};
+    color: {FG};
+    border-bottom: 1px solid alpha({C4}, 0.2);
+}}
+
+/* Entry / search box */
+entry {{ background-color: {BG}; color: {FG}; border: 1px solid alpha({C4}, 0.3); }}
+entry:focus {{ border-color: {C4}; }}
+
+/* Scrollbars */
+scrollbar slider {{ background-color: alpha({C8}, 0.4); min-width: 6px; min-height: 6px; }}
+scrollbar slider:hover {{ background-color: {C4}; }}
+"""
+
+os.makedirs(os.path.dirname(gtk_css_path), exist_ok=True)
+with open(gtk_css_path, 'w') as f:
+    f.write(gtk_css)
+
+# Reload GTK settings so running apps pick up new colors
+os.system('pkill -HUP gsd-xsettings 2>/dev/null; xsettingsd -c /dev/null 2>/dev/null &')
+
+# Reload Kitty colors live (sends USR1 to all kitty instances)
+os.system('pkill -USR1 kitty 2>/dev/null')
