@@ -42,7 +42,7 @@ alias nas-media='sudo mount -t cifs //192.168.1.20/media /mnt/nas-media -o uid=1
 alias unas-media='sudo umount /mnt/nas-media'
 alias nas-gen='sudo mount -t cifs //192.168.1.20/general /mnt/nas-gen -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
 alias unas-gen='sudo umount /mnt/nas-gen'
-alias hdd='sudo systemctl start mnt-exhdd.mount && echo "Mounted → /mnt/exhdd"'
+alias hdd='mountpoint -q /mnt/exhdd && echo "Already mounted at /mnt/exhdd" || sudo systemctl start mnt-exhdd.mount && echo "Mounted → /mnt/exhdd"'
 alias uhdd='sudo systemctl stop mnt-exhdd.mount && echo "Unmounted /mnt/exhdd"'
 alias rm='trash-put'
 alias neo='~/.config/neofetch/animated-neofetch.sh'
