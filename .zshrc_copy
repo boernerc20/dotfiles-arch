@@ -18,13 +18,13 @@ compinit
 # Default Editor
 export EDITOR=nvim
 
-# ── NVIDIA GPU Settings ─────────────────────────────────────────────────────
-# Force NVIDIA GPU for rendering (not AMD iGPU)
-export __GLX_VENDOR_LIBRARY_NAME=nvidia
-export GBM_BACKEND=nvidia-drm
-export __GL_GSYNC_ALLOWED=1
-export __GL_VRR_ALLOWED=1
-export WLR_NO_HARDWARE_CURSORS=1
+# ── NVIDIA GPU Settings (jarvis only) ───────────────────────────────────────
+# Uncomment on machines with NVIDIA GPU — set in hyprland-local.conf instead
+# export __GLX_VENDOR_LIBRARY_NAME=nvidia
+# export GBM_BACKEND=nvidia-drm
+# export __GL_GSYNC_ALLOWED=1
+# export __GL_VRR_ALLOWED=1
+# export WLR_NO_HARDWARE_CURSORS=1
 
 # Hook Pywal shell vars (if you use them very early)
 [[ -f ~/.cache/wal/colors.sh ]] && source ~/.cache/wal/colors.sh
@@ -52,7 +52,7 @@ alias rgb-off='openrgb -p OFF'
 alias cmds='micro ~/projects/linux/03-configuration/cmds'
 alias cui='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd'
 alias gotop='gotop --nvidia -s -a -p'
-alias mp4-gif='/home/chris/projects/linux/04-utilities/mp4-to-gif'
+alias mp4-gif='$HOME/projects/linux/04-utilities/mp4-to-gif'
 alias rpi-imager='sudo -E rpi-imager'
 alias ai='cd /mnt/secondary/ai/'
 alias venv='source venv/bin/activate'
@@ -98,14 +98,15 @@ zstyle ':completion:*' menu select
 . "$HOME/.local/bin/env"
 
 # opencode
-export PATH=/home/chris/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
 
-export PATH=$PATH:/home/chris/.spicetify
+export PATH=$PATH:$HOME/.spicetify
 
 # bun completions
-[ -s "/home/chris/.bun/_bun" ] && source "/home/chris/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-export HOME_ASSISTANT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmOTE1MzEyMTVjZDQ0ZGMyYTg1YmUwODExZGQ1MmYwZCIsImlhdCI6MTc2NjYwOTgyNiwiZXhwIjoyMDgxOTY5ODI2fQ._v7Nix4GY5_qEyOhDiw6ifogkfmgVBC4TwuyCLwg2RE"
+# Home Assistant token — set per-machine in ~/.zshrc.local (not committed)
+# export HOME_ASSISTANT_TOKEN="your-token-here"

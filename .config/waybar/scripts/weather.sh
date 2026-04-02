@@ -2,8 +2,10 @@
 
 # Weather with local °F 
 
-API_KEY="00e12f6a2d60e4a5592520ac1f833f37"
-CITY="Falls Church, US"
+# Get a free API key at https://openweathermap.org/api
+API_KEY="${OPENWEATHER_API_KEY:-your-api-key-here}"
+# Set your city, e.g. "London, UK" or "New York, US"
+CITY="${OPENWEATHER_CITY:-your-city-here}"
 
 ###############################################################################
 # fetch once in °F
