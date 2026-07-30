@@ -63,14 +63,22 @@ cp "$HOME/.cache/wal/colors-rofi.rasi" "$HOME/.config/rofi/colors-rofi.rasi"
 # 9) Set hyprlock
 ln -sf "$WP" "$HOME/.current_wallpaper"
 
-# 10) Animated ASCII
+# 10) Set hyprlock (pywal renders the template to ~/.cache/wal/hyprlock.conf;
+# copy it to a real file so a broken wal cache can never break the locker)
+if [ -f "$HOME/.cache/wal/hyprlock.conf" ]; then
+    cp "$HOME/.cache/wal/hyprlock.conf" "$HOME/.config/hypr/hyprlock.conf"
+else
+    echo "Warning: ~/.cache/wal/hyprlock.conf not rendered, keeping existing hyprlock.conf" >&2
+fi
+
+# 11) Animated ASCII
 if [ -x "$HOME/.config/neofetch/recolor_from_wal.py" ]; then
     "$HOME/.config/neofetch/recolor_from_wal.py"
 else
     echo "Warning: ~/.config/neofetch/recolor_from_wal.py not found or not executable, skipping neofetch theming" >&2
 fi
 
-# 11) Set yazi
+# 12) Set yazi
 if [ -x "$HOME/.local/bin/yazi-pywal-update.sh" ]; then
     "$HOME/.local/bin/yazi-pywal-update.sh"
 else
