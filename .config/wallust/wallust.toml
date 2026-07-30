@@ -1,0 +1,67 @@
+# wallust.toml — configuration for wallust, the pywal replacement.
+#
+# STATUS: This file is INERT until ~/.local/bin/wallust-switchover is run.
+# wallust is not installed. pywal remains the active theming engine.
+# See ~/.local/bin/wallust-switchover for the cutover procedure.
+#
+# ── Palette generation ──────────────────────────────────────────────
+# backend = "wal"     : use pywal's own color-quantization algorithm, so the
+#                       generated palette stays as close as possible to what
+#                       pywal already produces for the same wallpaper — the
+#                       goal of this migration is a drop-in swap, not a
+#                       new look.
+# palette = "salience" : wallust's newer palette-selection strategy tends to
+#                       track backend "wal" output closely while improving
+#                       consistency across busy/high-contrast images.
+# style = "dark"       : force a dark palette (this system never runs light).
+#
+# NOTE: the old `colorspace` key is DEPRECATED in wallust and must NOT be
+# reintroduced here — palette + style replace it.
+backend = "wal"
+palette = "salience"
+style = "dark"
+
+# Reject palettes with too little contrast between background and text
+# colors — protects against an unreadable terminal/lockscreen on a
+# low-contrast wallpaper.
+check_contrast = true
+
+# ── Templates ────────────────────────────────────────────────────────
+# Every target below deliberately points into ~/.cache/wal/ using pywal's
+# own filenames — NOT ~/.cache/wallust/. This is intentional: ~14 existing
+# consumers (kitty, zshrc, waybar, rofi, wlogout, yazi, cava, nvim, qt6ct,
+# firefox, neofetch, ~/.config/wal/postrun) already read those exact paths.
+# Keeping the paths identical means the entire rest of the system needs
+# zero changes for the pywal -> wallust swap. Do not "clean this up" by
+# retargeting outputs to ~/.cache/wallust/ — that would silently break
+# every one of those consumers.
+#
+# wallust's own terminal-sequence emission (~/.cache/wallust/sequences) is
+# handled separately by wallust itself, not a template — see
+# ~/.local/bin/wallust-switchover, which repoints the one consumer of the
+# old ~/.cache/wal/sequences file after a successful verified cutover.
+
+[templates]
+
+colors_json = { template = "colors.json", target = "~/.cache/wal/colors.json" }
+colors_sh = { template = "colors.sh", target = "~/.cache/wal/colors.sh" }
+colors_kitty = { template = "colors-kitty.conf", target = "~/.cache/wal/colors-kitty.conf" }
+colors_waybar = { template = "colors-waybar.css", target = "~/.cache/wal/colors-waybar.css" }
+colors_css = { template = "colors.css", target = "~/.cache/wal/colors.css" }
+colors_rofi = { template = "colors-rofi.rasi", target = "~/.cache/wal/colors-rofi.rasi" }
+colors_rofi_power = { template = "colors-rofi-power.rasi", target = "~/.cache/wal/colors-rofi-power.rasi" }
+colors_rofi_dark = { template = "colors-rofi-dark.rasi", target = "~/.cache/wal/colors-rofi-dark.rasi" }
+hyprlock = { template = "hyprlock.conf", target = "~/.cache/wal/hyprlock.conf" }
+cava = { template = "config.cava", target = "~/.cache/wal/config.cava" }
+yazi = { template = "yazi-theme.toml", target = "~/.cache/wal/yazi-theme.toml" }
+qt6ct = { template = "colors-qt6ct.conf", target = "~/.cache/wal/colors-qt6ct.conf" }
+nvim = { template = "colors-wal.vim", target = "~/.cache/wal/colors-wal.vim" }
+
+# ── Hooks ────────────────────────────────────────────────────────────
+# Reuse the existing pywal postrun script unchanged: it reads
+# ~/.cache/wal/colors.json (still produced above) and handles Qt/Kvantum
+# color-scheme generation, GTK (Thunar) CSS, and live kitty/GTK reload.
+# wallust runs hooks after templates are rendered, same as pywal's postrun
+# convention, so no changes to that script are needed.
+[hooks]
+postrun = "~/.config/wal/postrun"
