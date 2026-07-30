@@ -1,0 +1,14 @@
+# Staged replacement for portals.conf — apply AFTER installing
+# xdg-desktop-portal-hyprland:
+#   sudo pacman -S xdg-desktop-portal-hyprland
+#   sudo pacman -Rns xdg-desktop-portal-wlr
+#   mv ~/.config/xdg-desktop-portal/portals.conf.hyprland-pending \
+#      ~/.config/xdg-desktop-portal/portals.conf
+#   systemctl --user restart xdg-desktop-portal.service
+#
+# Why: xdg-desktop-portal-wlr gives degraded screenshare on Hyprland — no window
+# picker and no proper toplevel export. The hyprland backend is the supported one.
+[preferred]
+default=hyprland;gtk
+org.freedesktop.impl.portal.Screenshot=hyprland
+org.freedesktop.impl.portal.ScreenCast=hyprland

@@ -18,13 +18,13 @@ compinit
 # Default Editor
 export EDITOR=nvim
 
-# ── NVIDIA GPU Settings (jarvis only) ───────────────────────────────────────
-# Uncomment on machines with NVIDIA GPU — set in hyprland-local.conf instead
-# export __GLX_VENDOR_LIBRARY_NAME=nvidia
-# export GBM_BACKEND=nvidia-drm
-# export __GL_GSYNC_ALLOWED=1
-# export __GL_VRR_ALLOWED=1
-# export WLR_NO_HARDWARE_CURSORS=1
+# ── NVIDIA GPU Settings ─────────────────────────────────────────────────────
+# Intentionally empty. Compositor environment now lives in ONE place:
+# ~/.config/hypr/hyprland.conf (the `env = ...` lines). Setting these in .zshrc
+# duplicated them and applied them to every shell, not just the session.
+#
+# WLR_NO_HARDWARE_CURSORS was also removed here: it is obsolete for nvidia >= 555
+# (this system runs 610.43.03) and forced slower software cursor rendering.
 
 # Hook Pywal shell vars (if you use them very early)
 [[ -f ~/.cache/wal/colors.sh ]] && source ~/.cache/wal/colors.sh
@@ -40,10 +40,10 @@ alias public-ip='curl -4 ifconfig.me'
 alias cpp='rsync -ah --progress'
 alias nas-media='sudo mount -t cifs //192.168.1.20/media /mnt/nas-media -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
 alias unas-media='sudo umount /mnt/nas-media'
-alias nas-gen='sudo mount -t cifs //192.168.1.20/general /mnt/nas-gen -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
-alias unas-gen='sudo umount /mnt/nas-gen'
-alias hdd='mountpoint -q /mnt/exhdd && echo "Already mounted at /mnt/exhdd" || sudo systemctl start mnt-exhdd.mount && echo "Mounted → /mnt/exhdd"'
-alias uhdd='sudo systemctl stop mnt-exhdd.mount && echo "Unmounted /mnt/exhdd"'
+alias nas-back='sudo mount -t cifs //192.168.1.20/backups /mnt/nas-back -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
+alias unas-back='sudo umount /mnt/nas-back'
+alias nas-jarvis='sudo mount -t cifs //192.168.1.20/jarvis /mnt/jarvis -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
+alias unas-jarvis='sudo umount /mnt/jarvis'
 alias rm='trash-put'
 alias neo='~/.config/neofetch/animated-neofetch.sh'
 alias master='sudo cat /lockbox/pass/master'
@@ -51,12 +51,15 @@ alias rgb-default='openrgb -p DEFAULT'
 alias rgb-off='openrgb -p OFF'
 alias cmds='micro ~/projects/linux/03-configuration/cmds'
 alias cui='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd'
+alias cui-low='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd --lowvram'
 alias gotop='gotop --nvidia -s -a -p'
-alias mp4-gif='$HOME/projects/linux/04-utilities/mp4-to-gif'
+alias weather='wego -owm-api-key 00e12f6a2d60e4a5592520ac1f833f37 -l "Falls+Church" -d 1 -u imperial'
+alias mp4-gif='/home/chris/projects/linux/04-utilities/mp4-to-gif'
 alias rpi-imager='sudo -E rpi-imager'
-alias ai='cd /mnt/secondary/ai/'
+alias ai='cd /mnt/ai/'
 alias venv='source venv/bin/activate'
 alias ccm='ccm --plan pro'
+alias drives='df -h | grep mnt'
 
 # ── Yazi Integration ────────────────────────────────────────────────────────
 # Wrapper function to change directory on exit
@@ -98,15 +101,17 @@ zstyle ':completion:*' menu select
 . "$HOME/.local/bin/env"
 
 # opencode
-export PATH=$HOME/.opencode/bin:$PATH
+export PATH=/home/chris/.opencode/bin:$PATH
 
-export PATH=$PATH:$HOME/.spicetify
+export PATH=$PATH:/home/chris/.spicetify
 
 # bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+[ -s "/home/chris/.bun/_bun" ] && source "/home/chris/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-# Home Assistant token — set per-machine in ~/.zshrc.local (not committed)
-# export HOME_ASSISTANT_TOKEN="your-token-here"
+export HOME_ASSISTANT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmOTE1MzEyMTVjZDQ0ZGMyYTg1YmUwODExZGQ1MmYwZCIsImlhdCI6MTc2NjYwOTgyNiwiZXhwIjoyMDgxOTY5ODI2fQ._v7Nix4GY5_qEyOhDiw6ifogkfmgVBC4TwuyCLwg2RE"
+export TERM=xterm-256color
+# user npm global binaries
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
