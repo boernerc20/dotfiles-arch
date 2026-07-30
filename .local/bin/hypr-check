@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+
+# Color codes for clarity
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# hypr-check — validate the running Hyprland config for errors.
+# Wraps `hyprctl configerrors` and exits non-zero if any are present.
+# Degrades gracefully if Hyprland is not running (no HYPRLAND_INSTANCE_SIGNATURE).
+
+check_config_errors() {
+    local errors
+    errors="$(hyprctl configerrors)"
+
+    if [[ -z "$errors" || "$errors" == "ok" ]]; then
+        echo -e "${GREEN}No config errors.${NC}"
+        return 0
+    fi
+
+    echo -e "${RED}Hyprland config errors found:${NC}"
+    echo "$errors"
+    return 1
+}
+
+if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    echo -e "${YELLOW}Hyprland is not running (HYPRLAND_INSTANCE_SIGNATURE unset) — skipping config check.${NC}"
+    exit 0
+fi
+
+check_config_errors
