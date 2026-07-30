@@ -22,14 +22,6 @@ wal "$@"
 if [[ $? -eq 0 ]]; then
     echo -e "${GREEN}Pywal colors generated successfully${NC}"
 
-    # Update SDDM theme if the update script exists
-    if [[ -x "$HOME/.local/bin/update-sddm-theme" ]]; then
-        echo -e "${BLUE}Updating SDDM theme...${NC}"
-        "$HOME/.local/bin/update-sddm-theme"
-    else
-        echo -e "${RED}Warning: SDDM update script not found at ~/.local/bin/update-sddm-theme${NC}"
-    fi
-
     # Reload other applications (add your existing reload commands here)
     # Example:
     # pkill -USR1 waybar 2>/dev/null || true

@@ -36,55 +36,43 @@ if pgrep -x waybar > /dev/null; then
     disown
 fi
 
-# 5) Apply to new terminals
-/home/chris/.local/bin/wal-ala.sh
-
-# 6) Apply to cava
-/home/chris/.local/bin/wal-cava.sh
-
-# 7) Apply to firefox
-pywalfox update
-
-# 8) Link firefox home page
-cp ~/.cache/wal/colors.css ~/.config/firefox/home/colors.css
-
-# 9) Set rofi
-bash /home/chris/.local/bin/wal-rofi.sh "$WP"
-
-# 10) Set hyprlock
-ln -sf "$WP" "$HOME/.current_wallpaper"
-
-# 12) Animated ASCII
-/home/chris/.config/neofetch/recolor_from_wal.py
-
-# 13) Set yazi
-/home/chris/.local/bin/yazi-pywal-update.sh
-
-# 14) Update ly login manager colors
-/home/chris/.local/bin/wal-ly.sh
-
-# 15) Set spotify
-# Check if Spotify is running before updating
-SPOTIFY_WAS_RUNNING=false
-if pgrep -x spotify > /dev/null; then
-    SPOTIFY_WAS_RUNNING=true
+# 5) Apply to cava
+if [ -x "$HOME/.local/bin/wal-cava.sh" ]; then
+    "$HOME/.local/bin/wal-cava.sh"
+else
+    echo "Warning: ~/.local/bin/wal-cava.sh not found or not executable, skipping cava theming" >&2
 fi
 
-# Update colors and apply theme (quiet mode)
-if bash /home/chris/.config/spicetify/Themes/Pywal/update-colors.sh true 2>/dev/null; then
-    # Only apply if color update succeeded
-    spicetify apply 2>/dev/null || true
-
-    # Restart Spotify to apply new theme (only if it was already running)
-    if [ "$SPOTIFY_WAS_RUNNING" = true ]; then
-        # Kill all Spotify processes
-        killall -q spotify 2>/dev/null || true
-        sleep 0.5
-        # Restart Spotify in background, detached from terminal
-        nohup spotify &>/dev/null &
-        disown
-    fi
+# 6) Apply to firefox
+if command -v pywalfox &>/dev/null; then
+    pywalfox update
 else
-    # Color update failed, skip Spotify theming but don't fail the whole script
-    echo "Warning: Failed to update Spotify colors" >&2
+    echo "Warning: pywalfox not found, skipping Firefox theming" >&2
+fi
+
+# 7) Link firefox home page (only if the profile dir exists)
+if [ -d "$HOME/.config/firefox/home" ]; then
+    cp ~/.cache/wal/colors.css ~/.config/firefox/home/colors.css
+fi
+
+# 8) Set rofi — symlink current wallpaper for the template's background-image,
+# then install the freshly rendered theme.
+ln -sf "$WP" "$HOME/.config/rofi/img/current.png"
+cp "$HOME/.cache/wal/colors-rofi.rasi" "$HOME/.config/rofi/colors-rofi.rasi"
+
+# 9) Set hyprlock
+ln -sf "$WP" "$HOME/.current_wallpaper"
+
+# 10) Animated ASCII
+if [ -x "$HOME/.config/neofetch/recolor_from_wal.py" ]; then
+    "$HOME/.config/neofetch/recolor_from_wal.py"
+else
+    echo "Warning: ~/.config/neofetch/recolor_from_wal.py not found or not executable, skipping neofetch theming" >&2
+fi
+
+# 11) Set yazi
+if [ -x "$HOME/.local/bin/yazi-pywal-update.sh" ]; then
+    "$HOME/.local/bin/yazi-pywal-update.sh"
+else
+    echo "Warning: ~/.local/bin/yazi-pywal-update.sh not found or not executable, skipping yazi theming" >&2
 fi

@@ -54,7 +54,7 @@ mainbox {{
 imagebox {{
     padding:                    20px;
     background-color:           transparent;
-    background-image:           url("~/.config/rofi/img/jig_jig.png", height);
+    background-image:           url("~/.config/rofi/img/current.png", height);
     orientation:                vertical;
     children:                   [ "inputbar", "dummy", "mode-switcher" ];
 }}
