@@ -1,0 +1,39 @@
+# mako — notification daemon
+# Installed 2026-07-28. Before this, nothing served org.freedesktop.Notifications,
+# so every desktop notification on this machine silently failed.
+#
+# Colors follow the current pywal palette (~/.cache/wal/colors.sh). If you change
+# wallpaper and want mako to follow, restart it: makoctl reload  (or pkill mako && mako &)
+
+font=JetBrainsMono Nerd Font 11
+background-color=#020016ee
+text-color=#cfd1ea
+border-color=#F2AB53
+progress-color=over #1454A2
+
+width=380
+height=140
+margin=12
+padding=14
+border-size=2
+border-radius=8
+
+anchor=top-right
+layer=overlay
+default-timeout=6000
+ignore-timeout=0
+max-visible=5
+
+[urgency=low]
+border-color=#1454A2
+default-timeout=4000
+
+[urgency=normal]
+border-color=#F2AB53
+
+# Critical notifications never auto-dismiss — the weekly diagnosis uses this
+# urgency when a check FAILS, so it stays on screen until acknowledged.
+[urgency=critical]
+border-color=#C743BA
+text-color=#cfd1ea
+default-timeout=0
