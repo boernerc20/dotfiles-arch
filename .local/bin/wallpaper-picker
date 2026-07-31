@@ -1,0 +1,108 @@
+#!/bin/bash
+set -e
+
+# Color codes for clarity
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# wallpaper-picker — rofi thumbnail picker over ~/pics/wallpapers, replacing
+# the old hardcoded SUPER+CTRL+1..0 binds (only 10 of ~30 wallpapers reachable).
+# Marks the currently-active wallpaper (~/.current_wallpaper symlink) with a
+# leading marker. Applies the selection via wal-hypr.sh.
+#
+# Usage: wallpaper-picker [--random]
+
+WALLPAPER_DIR="$HOME/pics/wallpapers"
+ROFI_CONFIG="$HOME/.config/rofi/colors-rofi.rasi"
+WAL_HYPR="/home/chris/.local/bin/wal-hypr.sh"
+CURRENT_LINK="$HOME/.current_wallpaper"
+
+list_wallpapers() {
+    # Non-recursive; case-insensitive png/jpg/jpeg; skips upscale/ automatically
+    # since maxdepth 1 never descends into subdirectories.
+    find "$WALLPAPER_DIR" -maxdepth 1 -type f \( \
+        -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \
+        \) | sort
+}
+
+# generate_menu <wallpapers> <current_real_path>
+# Streams one dmenu entry per line directly to stdout: "NAME\0icon\x1f/path".
+# Must NOT be captured via $(...) — bash command substitution strips embedded
+# NUL bytes, which silently breaks rofi's icon syntax. Pipe it instead.
+generate_menu() {
+    local wallpapers=$1 current_real=$2
+    local path name
+    while IFS= read -r path; do
+        name="$(basename "$path")"
+        name="${name%.*}"
+        if [[ -n "$current_real" && "$path" == "$current_real" ]]; then
+            name="● $name"
+        fi
+        printf '%s\0icon\x1f%s\n' "$name" "$path"
+    done <<< "$wallpapers"
+}
+
+apply_wallpaper() {
+    local path=$1
+    "$WAL_HYPR" "$path"
+}
+
+main() {
+    if [[ ! -d "$WALLPAPER_DIR" ]]; then
+        echo -e "${RED}Error: wallpaper directory not found: $WALLPAPER_DIR${NC}" >&2
+        exit 1
+    fi
+
+    local wallpapers
+    wallpapers="$(list_wallpapers)"
+
+    if [[ -z "$wallpapers" ]]; then
+        echo -e "${RED}Error: no wallpapers found in $WALLPAPER_DIR${NC}" >&2
+        exit 1
+    fi
+
+    if [[ "${1:-}" == "--random" ]]; then
+        local chosen
+        chosen="$(echo "$wallpapers" | shuf -n 1)"
+        apply_wallpaper "$chosen"
+        exit 0
+    fi
+
+    local current_real=""
+    if [[ -L "$CURRENT_LINK" ]]; then
+        current_real="$(readlink -f "$CURRENT_LINK")"
+    fi
+
+    local selection
+    selection="$(generate_menu "$wallpapers" "$current_real" | rofi -dmenu -show-icons -config "$ROFI_CONFIG" -p "wallpaper")"
+
+    if [[ -z "$selection" ]]; then
+        exit 0
+    fi
+
+    # Strip the active marker before resolving back to a path.
+    selection="${selection#● }"
+
+    local chosen=""
+    local path name
+    while IFS= read -r path; do
+        name="$(basename "$path")"
+        name="${name%.*}"
+        if [[ "$name" == "$selection" ]]; then
+            chosen="$path"
+            break
+        fi
+    done <<< "$wallpapers"
+
+    if [[ -z "$chosen" ]]; then
+        echo -e "${RED}Error: could not resolve selection to a wallpaper file${NC}" >&2
+        exit 1
+    fi
+
+    apply_wallpaper "$chosen"
+}
+
+main "$@"
