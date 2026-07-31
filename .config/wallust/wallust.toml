@@ -1,25 +1,35 @@
 # wallust.toml — configuration for wallust, the pywal replacement.
 #
-# STATUS: This file is INERT until ~/.local/bin/wallust-switchover is run.
-# wallust is not installed. pywal remains the active theming engine.
-# See ~/.local/bin/wallust-switchover for the cutover procedure.
+# Verified against wallust 3.5.2. Check values with `wallust run --help`,
+# which lists every accepted backend / colorspace / palette variant.
 #
 # ── Palette generation ──────────────────────────────────────────────
-# backend = "wal"     : use pywal's own color-quantization algorithm, so the
-#                       generated palette stays as close as possible to what
-#                       pywal already produces for the same wallpaper — the
-#                       goal of this migration is a drop-in swap, not a
-#                       new look.
-# palette = "salience" : wallust's newer palette-selection strategy tends to
-#                       track backend "wal" output closely while improving
-#                       consistency across busy/high-contrast images.
-# style = "dark"       : force a dark palette (this system never runs light).
+# These are deliberately CONSERVATIVE: the point of this migration is a
+# like-for-like engine swap, so that if the colors shift you know it's the
+# new engine and not a config choice. Experiment in Phase 6, not here.
 #
-# NOTE: the old `colorspace` key is DEPRECATED in wallust and must NOT be
-# reintroduced here — palette + style replace it.
+# backend    = "wal"  : pywal's own imagemagick-based quantization, so the
+#                       palette stays as close as possible to what pywal
+#                       already produces for the same wallpaper.
+# color_space = "lab" : CIE L*a*b, the closest analogue to pywal's behaviour.
+# palette    = "dark" : 8 dark colors, dark background, light contrast.
+#
+# WORTH TRYING LATER (one-line change, Phase 6 material):
+#   color_space = "salience" + palette = "saliencedark"
+#     picks colors by visual salience (how much they pop from the background).
+#     Variants tone it down if everything screams for attention:
+#       saliencedarkbalanced     — sample the median salient colors
+#       saliencedarkdistributed  — spread across the salient range
+#       saliencedarklow          — sample the least salient
+#     Any palette can be suffixed with 16 (e.g. saliencedark16) for the
+#     "16 colors trick" instead of 8.
+#
+# NOTE: `palette` encodes BOTH strategy AND light/dark — there is no separate
+# `style` key in 3.5.2. Writing `palette = "salience"` with `style = "dark"`
+# is a v2/early-v3 schema and fails with "unknown variant `salience`".
 backend = "wal"
-palette = "salience"
-style = "dark"
+color_space = "lab"
+palette = "dark"
 
 # Reject palettes with too little contrast between background and text
 # colors — protects against an unreadable terminal/lockscreen on a

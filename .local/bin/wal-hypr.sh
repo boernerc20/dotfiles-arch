@@ -16,8 +16,22 @@ if [[ -z "$WP" || ! -f "$WP" ]]; then
   exit 1
 fi
 
-# 1) Generate new Wal palette
-wal -i "$WP"
+# 1) Generate the new palette.
+#
+# wallust replaced python-pywal on 2026-07-31 (Phase 5). It renders into
+# ~/.cache/wal/ using pywal's OWN filenames, so every consumer below — waybar,
+# kitty, rofi, cava, yazi, firefox, ~/.config/wal/postrun — is unchanged.
+# Config: ~/.config/wallust/wallust.toml
+#
+# Do NOT put `wal -i` back here. pywal and wallust write the same paths, so a
+# stray `wal -i` silently reverts the whole system to the old engine on the
+# next wallpaper change.
+if command -v wallust &>/dev/null; then
+    wallust run -q "$WP"
+else
+    echo "ERROR: wallust not found — cannot generate palette. Aborting." >&2
+    exit 1
+fi
 
 # 2) Set the wallpaper on all monitors.
 # NOTE: the old `hyprctl hyprpaper preload` call was removed 2026-07-30 — hyprpaper

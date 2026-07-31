@@ -151,14 +151,22 @@ verify() {
 
     # ── The single most important check: does hyprlock itself accept this
     # config? A bad lock config can lock the user out, so this is not
-    # optional. Note: when run outside a live Wayland session this command
-    # is EXPECTED to print something like "Couldn't connect to a wayland
-    # compositor" and exit — that is harmless and NOT a failure. The only
-    # thing that indicates a real problem is a line containing "Config
-    # error" in its output.
-    info "Validating hyprlock config parses cleanly (hyprlock --config $hyprlock_out) ..."
+    # optional.
+    #
+    # CRITICAL: this MUST run with the compositor environment stripped.
+    # `hyprlock --config X` inside a live Wayland session does not merely
+    # parse the file — it LOCKS THE SCREEN. Running it here unguarded would
+    # trigger the very locker that is currently disabled for wedging the
+    # session (see conf.d/07-binds.conf). With WAYLAND_DISPLAY and
+    # HYPRLAND_INSTANCE_SIGNATURE removed, hyprlock parses the config, fails
+    # to connect, and exits — which is exactly the validation we want.
+    #
+    # So "Couldn't connect to a wayland compositor" in the output is EXPECTED
+    # and is not a failure. Only a line containing "Config error" is.
+    info "Validating hyprlock config parses cleanly (compositor env stripped — will NOT lock) ..."
     local hyprlock_output
-    hyprlock_output="$(hyprlock --config "$hyprlock_out" 2>&1 || true)"
+    hyprlock_output="$(env -u WAYLAND_DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE -u XDG_SESSION_TYPE \
+                       hyprlock --config "$hyprlock_out" 2>&1 || true)"
     if echo "$hyprlock_output" | grep -q "Config error"; then
         echo "$hyprlock_output"
         rollback "hyprlock reported a Config error against $hyprlock_out. This file must NEVER be installed as the real lock config — see rollback above."
@@ -198,10 +206,14 @@ main() {
     echo "Please verify by eye (this script cannot safely automate these checks):"
     echo "  - Wallpaper switch:  SUPER+CTRL+1 (or your usual bind) — confirm colors update everywhere."
     echo "  - Rofi:              SUPER+D — confirm it themes correctly."
-    echo "  - Lock screen:       SUPER+L — confirm hyprlock shows correctly and unlocks normally."
-    echo "    If the lock screen looks wrong, do NOT panic and do NOT pkill hyprlock — use"
-    echo "    'hyprctl dispatch exec hyprlock' to adopt/replace it, per the safety notes in"
-    echo "    ~/.config/hypr/hyprlock.conf."
+    echo "  - Waybar / kitty / yazi / cava — confirm colors follow the new palette."
+    echo
+    echo "  NOTE: do NOT test the lock screen. Locking is DISABLED as of 2026-07-30 after a"
+    echo "  second lockout (two hyprlock instances raced and wedged the session). SUPER+L is"
+    echo "  unbound, hypridle does not autostart, and wlogout's lock action is neutralised."
+    echo "  hyprlock.conf is still generated and parse-checked above so it is ready when"
+    echo "  locking is eventually re-enabled behind a real flock mutex — but nothing should"
+    echo "  launch hyprlock today. See ~/.config/hypr/conf.d/07-binds.conf."
     echo
     echo "A backup of the pre-switchover pywal state was kept at:"
     echo "  $BACKUP_DIR"
