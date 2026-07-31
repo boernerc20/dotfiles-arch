@@ -78,8 +78,24 @@ fi
 ln -sf "$WP" "$HOME/.config/rofi/img/current.png"
 cp "$HOME/.cache/wal/colors-rofi.rasi" "$HOME/.config/rofi/colors-rofi.rasi"
 
-# 9) Set hyprlock
+# 9) Record the current wallpaper (hyprlock + rofi templates both read this)
 ln -sf "$WP" "$HOME/.current_wallpaper"
+
+# 9a) Notifications — mako has no live-reload of colors, so install the newly
+# rendered config and tell the running daemon to re-read it.
+if [ -f "$HOME/.cache/wal/mako-config" ]; then
+    cp "$HOME/.cache/wal/mako-config" "$HOME/.config/mako/config"
+    makoctl reload 2>/dev/null || echo "Warning: makoctl reload failed (is mako running?)" >&2
+fi
+
+# 9b) Hyprland window-border colors. Copied to a REAL file under conf.d/ rather
+# than sourced out of the cache: hyprland.conf sources 09-colors.conf
+# unconditionally, so a missing/half-written cache file would be a config error
+# on every reload. A copy always holds the last known-good palette.
+# Hyprland auto-reloads on write, so the borders update with no explicit reload.
+if [ -f "$HOME/.cache/wal/hypr-colors.conf" ]; then
+    cp "$HOME/.cache/wal/hypr-colors.conf" "$HOME/.config/hypr/conf.d/09-colors.conf"
+fi
 
 # 10) Set hyprlock (pywal renders the template to ~/.cache/wal/hyprlock.conf;
 # copy it to a real file so a broken wal cache can never break the locker)

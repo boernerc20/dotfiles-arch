@@ -6,10 +6,10 @@
 # (hex with no leading '#') and append an alpha pair where wanted.
 
 font=JetBrainsMono Nerd Font 11
-background-color=#161016ee
-text-color=#C7F1F7
-border-color=#B1B4E6
-progress-color=over #CA4CBD
+background-color=#{{background | strip}}ee
+text-color=#{{foreground | strip}}
+border-color=#{{color4 | strip}}
+progress-color=over #{{color2 | strip}}
 
 width=380
 height=140
@@ -25,16 +25,16 @@ ignore-timeout=0
 max-visible=5
 
 [urgency=low]
-border-color=#759FA5
-text-color=#A7E3EC
+border-color=#{{color8 | strip}}
+text-color=#{{color7 | strip}}
 default-timeout=4000
 
 [urgency=normal]
-border-color=#B1B4E6
+border-color=#{{color4 | strip}}
 
 # Critical notifications never auto-dismiss — the weekly diagnosis uses this
 # urgency when a check FAILS, so it stays on screen until acknowledged.
 [urgency=critical]
-border-color=#497BB7
-text-color=#C7F1F7
+border-color=#{{color1 | strip}}
+text-color=#{{foreground | strip}}
 default-timeout=0

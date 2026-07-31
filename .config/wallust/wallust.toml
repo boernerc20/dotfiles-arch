@@ -66,6 +66,8 @@ cava = { template = "config.cava", target = "~/.cache/wal/config.cava" }
 yazi = { template = "yazi-theme.toml", target = "~/.cache/wal/yazi-theme.toml" }
 qt6ct = { template = "colors-qt6ct.conf", target = "~/.cache/wal/colors-qt6ct.conf" }
 nvim = { template = "colors-wal.vim", target = "~/.cache/wal/colors-wal.vim" }
+mako = { template = "mako-config", target = "~/.cache/wal/mako-config" }
+hypr_colors = { template = "hypr-colors.conf", target = "~/.cache/wal/hypr-colors.conf" }
 
 # ── Hooks ────────────────────────────────────────────────────────────
 # Reuse the existing pywal postrun script unchanged: it reads
