@@ -78,13 +78,28 @@ alias fm='yy'
 source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Start ssh-agent if not already running
-if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-  eval "$(ssh-agent -s)" > /dev/null 2>&1
-fi
+# ── SSH agent ───────────────────────────────────────────────────────────────
+# The agent is provided by the systemd USER unit `ssh-agent.socket`; it is
+# deliberately NOT spawned here. Changed 2026-07-31.
+#
+# The old block was:
+#     if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+#       eval "$(ssh-agent -s)" > /dev/null 2>&1
+#     fi
+# In an SSH login that put ssh-agent inside session-N.scope, where it OUTLIVED
+# the connection and pinned that logind session open in State=closing forever.
+# pam_usb can't resolve a tty under Wayland, so it falls back to asking logind
+# whether the user has a remote session -- one stale entry makes it deny
+# USB-key sudo permanently, with a bare "Access denied" and no explanation.
+# See the header comment in /etc/security/pam_usb.conf.
+#
+# A systemd user unit runs in app.slice, so it can never pin a login session.
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
 
-# Add SSH key silently
-ssh-add -q ~/.ssh/id_ed25519 2>/dev/null
+# Load the key once, only if the agent is reachable and it isn't loaded yet.
+if [[ -S "$SSH_AUTH_SOCK" ]] && ! ssh-add -l &>/dev/null; then
+  ssh-add -q ~/.ssh/id_ed25519 2>/dev/null
+fi
 
 # Python 3.10 with PIP Setup
 export PATH=$PATH:/opt/android-sdk/platform-tools
