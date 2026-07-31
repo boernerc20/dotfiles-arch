@@ -1,5 +1,5 @@
 /* ===========================================================================
-   waybar — style-base.css   |   cyberpunk / sci-fi
+   waybar — style-base.css   |   cyberpunk / sci-fi, HyDE-influenced
    ---------------------------------------------------------------------------
    This file is only HALF the stylesheet. wal-hypr.sh builds the live one as:
        cat ~/.cache/wal/colors-waybar.css style-base.css > style.css
@@ -7,24 +7,34 @@
    half. Edit THIS file — style.css is overwritten on every wallpaper change
    and is gitignored.
 
+   Sizing
+   ------
+   Scaled up for a 34" 3440x1440 ultrawide. The previous 13px/38px was
+   measured on paper rather than on the glass and read as small at desk
+   distance. Base is now 15px on a 44px bar, icons 17px.
+
    Design intent
    -------------
-   Spacious, not dense: each module is its own floating pill, as in the
-   previous setup. On 3440px there is no reason to cram. The character comes
-   from the treatment, not the density:
+   Spacious, not dense: each module is its own floating pill. On 3440px there
+   is no reason to cram. The character comes from the treatment:
 
      * clipped-corner geometry (4px / 14px diagonal radius) reads as panel
        plating rather than a soft bubble
      * a thin bright edge on the accent side of each pill
      * outer neon bloom via box-shadow, plus text-shadow on the glyphs so
        type appears lit rather than printed
-     * uppercase + letter-spacing on numeric readouts for an instrument feel
+     * letter-spacing on numeric readouts for an instrument feel
      * every color comes from the palette — no hardcoded hex anywhere
+
+   The workspace indicator is the one borrowed HyDE cue: real numbers, with
+   the active one as an elongated filled pill. The previous version used
+   identical dots for every workspace and gave no indication of which desktop
+   was current.
    =========================================================================== */
 
 * {
   font-family: "JetBrainsMono Nerd Font", monospace;
-  font-size: 13px;
+  font-size: 15px;
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -48,11 +58,15 @@ window#waybar {
 #custom-hardware,
 #custom-weather,
 #custom-network-bluetooth,
+#custom-cliphist,
+#custom-wallpaper,
 #network,
 #pulseaudio,
 #mpris,
 #clock,
 #custom-power,
+#idle_inhibitor,
+#privacy,
 #tray,
 #workspaces {
   background-color: alpha(@background, 0.72);
@@ -60,7 +74,7 @@ window#waybar {
   /* Clipped diagonal corners — the "plating" cue. */
   border-radius: 4px 14px 4px 14px;
   margin: 6px 3px;
-  padding: 0 14px;
+  padding: 0 15px;
   color: @foreground;
   box-shadow: 0 0 10px alpha(@background, 0.55);
 }
@@ -68,8 +82,8 @@ window#waybar {
 /* ── Accent per module, with matching bloom ──────────────────────────────── */
 #custom-distro {
   color: @color4;
-  font-size: 16px;
-  padding: 0 15px;
+  font-size: 19px;
+  padding: 0 17px;
   border-color: alpha(@color4, 0.55);
   text-shadow: 0 0 7px alpha(@color4, 0.85);
   box-shadow: 0 0 12px alpha(@color4, 0.28);
@@ -104,6 +118,7 @@ window#waybar {
 
 #custom-network-bluetooth {
   color: @color5;
+  font-size: 17px;
   border-color: alpha(@color5, 0.34);
   text-shadow: 0 0 6px alpha(@color5, 0.45);
 }
@@ -118,15 +133,55 @@ window#waybar {
   color: @color4;
   font-weight: bold;
   letter-spacing: 1.1px;
-  padding: 0 17px;
+  padding: 0 19px;
   border-color: alpha(@color4, 0.55);
   text-shadow: 0 0 9px alpha(@color4, 0.80);
   box-shadow: 0 0 14px alpha(@color4, 0.24);
 }
 
-/* ── Workspaces — the one place that should feel alive ───────────────────── */
+/* ── Utility cluster — square-ish icon buttons ───────────────────────────── */
+/* Narrower padding so these read as a group of controls rather than as
+   readouts, without breaking the shared plate geometry. */
+#custom-cliphist,
+#custom-wallpaper,
+#idle_inhibitor,
+#privacy {
+  font-size: 17px;
+  padding: 0 12px;
+  color: @color6;
+  border-color: alpha(@color6, 0.30);
+  text-shadow: 0 0 6px alpha(@color6, 0.45);
+}
+
+#custom-cliphist:hover,
+#custom-wallpaper:hover,
+#idle_inhibitor:hover {
+  color: @color4;
+  background-color: alpha(@background, 0.88);
+  border-color: alpha(@color4, 0.55);
+  text-shadow: 0 0 9px alpha(@color4, 0.80);
+  box-shadow: 0 0 16px alpha(@color4, 0.34);
+}
+
+/* Inhibitor ON is a state worth seeing from across the room. */
+#idle_inhibitor.activated {
+  color: @color3;
+  border-color: alpha(@color3, 0.65);
+  text-shadow: 0 0 8px @color3, 0 0 16px alpha(@color3, 0.70);
+  box-shadow: 0 0 16px alpha(@color3, 0.35);
+}
+
+/* Privacy only appears while something is actually capturing — make it loud. */
+#privacy {
+  color: @color1;
+  border-color: alpha(@color1, 0.60);
+  text-shadow: 0 0 8px alpha(@color1, 0.80);
+  box-shadow: 0 0 14px alpha(@color1, 0.30);
+}
+
+/* ── Workspaces — real numbers, unmistakable active state ────────────────── */
 #workspaces {
-  padding: 0 8px;
+  padding: 0 6px;
   border-color: alpha(@color4, 0.34);
 }
 
@@ -134,38 +189,55 @@ window#waybar {
   background-color: transparent;
   border: none;
   box-shadow: none;
-  color: alpha(@color8, 0.55);
-  padding: 0 8px;
-  margin: 0;
-  font-size: 10px;
-  border-radius: 0;
-  transition: color 0.20s ease, text-shadow 0.20s ease;
+  color: alpha(@foreground, 0.38);
+  font-size: 15px;
+  font-weight: bold;
+  min-width: 30px;
+  padding: 0 10px;
+  margin: 5px 3px;
+  border-radius: 3px 11px 3px 11px;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Persistent-but-unused workspaces recede without disappearing. */
+#workspaces button.empty {
+  color: alpha(@foreground, 0.22);
+}
+
+/* The active workspace: filled, elongated, and lit. Elongation is the HyDE
+   cue — it stays legible even for someone who cannot pick the accent color
+   out from the inactive ones. */
 #workspaces button.active {
-  color: @color4;
-  font-size: 13px;
-  /* Layered bloom: tight core + wide halo = neon tube, not a flat dot. */
-  text-shadow: 0 0 6px @color4, 0 0 14px alpha(@color4, 0.75);
+  color: @background;
+  background-color: @color4;
+  min-width: 46px;
+  text-shadow: none;
+  box-shadow: 0 0 16px alpha(@color4, 0.70);
 }
 
 #workspaces button.urgent {
-  color: @color1;
-  text-shadow: 0 0 6px @color1, 0 0 14px alpha(@color1, 0.75);
+  color: @background;
+  background-color: @color1;
+  box-shadow: 0 0 16px alpha(@color1, 0.75);
 }
 
 #workspaces button:hover {
-  color: @foreground;
-  background-color: transparent;
-  box-shadow: none;
-  text-shadow: 0 0 8px alpha(@foreground, 0.65);
+  color: @color4;
+  background-color: alpha(@color4, 0.16);
+  box-shadow: inset 0 0 0 1px alpha(@color4, 0.45);
+  text-shadow: 0 0 8px alpha(@color4, 0.65);
+}
+
+#workspaces button.active:hover {
+  color: @background;
+  background-color: @color4;
 }
 
 /* ── Power ───────────────────────────────────────────────────────────────── */
 #custom-power {
   color: @color1;
-  font-size: 14px;
-  padding: 0 15px;
+  font-size: 17px;
+  padding: 0 16px;
   border-color: alpha(@color1, 0.48);
   text-shadow: 0 0 7px alpha(@color1, 0.70);
 }
@@ -183,14 +255,15 @@ window#waybar {
 #clock:hover,
 #custom-hardware:hover,
 #network:hover,
-#custom-weather:hover {
+#custom-weather:hover,
+#custom-network-bluetooth:hover {
   background-color: alpha(@background, 0.88);
   box-shadow: 0 0 16px alpha(@color4, 0.34);
 }
 
 /* ── Tray ────────────────────────────────────────────────────────────────── */
 #tray {
-  padding: 0 12px;
+  padding: 0 13px;
   border-color: alpha(@color8, 0.28);
 }
 
@@ -224,5 +297,6 @@ tooltip {
 
 tooltip label {
   color: @foreground;
-  padding: 5px;
+  padding: 6px;
+  font-size: 14px;
 }

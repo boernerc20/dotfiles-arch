@@ -1,15 +1,32 @@
 {
-  // Sized for DP-3: 3440x1440. The previous 40px/16px was 1080p sizing —
-  // visibly chunky on a 1440p-tall panel. 34px/13px reads as the same
-  // physical size at normal viewing distance and returns vertical space.
-  "font": "JetBrainsMono Nerd Font:size=13",
-  "height": 38,
+  // ==========================================================================
+  // waybar — sized for DP-3 (3440x1440, 34" ultrawide)
+  // --------------------------------------------------------------------------
+  // GLYPH WARNING. Every icon below is a Nerd Font Private Use Area character.
+  // These bytes have been silently stripped once before — config.jsonc shipped
+  // with `"format-icons": ["", "", ""]` (three EMPTY strings), which is why
+  // the volume icon vanished and, worse, why the workspace indicator rendered
+  // as blank buttons: format was "{icon}" and every icon resolved to "".
+  //
+  // If you edit this file with a tool that is not UTF-8 clean, re-run:
+  //     ~/.config/waybar/scripts/verify-glyphs.py
+  // which asserts every codepoint here actually exists in the installed font.
+  //
+  // Workspaces now use "{id}" — a real number, not a lookup. Even if a glyph
+  // is lost again, the workspace indicator cannot go blank.
+  // ==========================================================================
+
+  "layer": "top",
+  "position": "top",
+  // 46, not 44: the module pills (6px margin + 17px icons) need 45px minimum,
+  // and waybar silently grows the bar while logging a warning if asked for
+  // less. Declaring the real height keeps config and render in agreement.
+  "height": 46,
   "spacing": 6,
   "reload_style_on_change": true,
 
-  // Spacious layout: every module is its OWN floating pill, as in the
-  // previous setup — there is plenty of horizontal room on 3440px, so
-  // density is not the goal. Styling carries the character instead.
+  // Spacious: one floating pill per module. There is plenty of horizontal
+  // room on 3440px, so density is not the goal — the styling carries it.
   "modules-left": [
     "custom/distro",
     "custom/hardware",
@@ -20,19 +37,38 @@
     "hyprland/workspaces"
   ],
   "modules-right": [
+    "privacy",
+    "idle_inhibitor",
+    "custom/cliphist",
+    "custom/wallpaper",
+    "custom/weather",
     "network",
     "custom/network-bluetooth",
-    "custom/weather",
     "tray",
     "clock",
     "custom/power"
   ],
 
+  // ── Workspaces ───────────────────────────────────────────────────────────
+  // "{id}" prints the workspace NUMBER directly. The active one is styled as
+  // an elongated filled pill (see style-base.css) so the current desktop is
+  // unmistakable at a glance — the previous icon-dot version gave no such cue.
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4, 5]
+    },
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1"
+  },
+
   "custom/distro": {
     "exec": "~/.config/waybar/scripts/distro_icon.sh",
     "format": "{}",
     "interval": 0,
-    "tooltip": false
+    "tooltip": false,
+    "on-click": "rofi -show drun -config ~/.config/rofi/colors-rofi.rasi"
   },
 
   "custom/hardware": {
@@ -48,19 +84,6 @@
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
 
-  "hyprland/workspaces": {
-    "format": "{icon}",
-    "format-icons": {
-      "active": "",
-      "default": "",
-      "empty": ""
-    },
-    "persistent-workspaces": {
-      "*": [1, 2, 3, 4, 5]
-    },
-    "on-click": "activate"
-  },
-
   "custom/weather": {
     "exec": "~/.config/waybar/scripts/weather.sh",
     "interval": 600,
@@ -72,7 +95,46 @@
     "exec": "~/.config/waybar/scripts/network_bluetooth.sh",
     "interval": 10,
     "format": "{}",
-    "tooltip": false
+    "tooltip": false,
+    "on-click": "blueman-manager"
+  },
+
+  // ── Utility cluster (HyDE-inspired) ──────────────────────────────────────
+  // Screen-lock inhibitor: click to keep the display awake during a long
+  // build, a film, or a remote session.
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰅶",
+      "deactivated": "󰾪"
+    },
+    "tooltip-format-activated": "Idle inhibited — display will stay awake",
+    "tooltip-format-deactivated": "Idle normal"
+  },
+
+  // Shows an indicator whenever something is capturing screen, mic or camera.
+  "privacy": {
+    "icon-spacing": 8,
+    "icon-size": 15,
+    "transition-duration": 200,
+    "modules": [
+      { "type": "screenshare", "tooltip": true },
+      { "type": "audio-in", "tooltip": true }
+    ]
+  },
+
+  // Same targets as the SUPER+V / SUPER+W keybinds, so bar and keyboard agree.
+  "custom/cliphist": {
+    "format": "󰅍",
+    "tooltip": false,
+    "on-click": "sleep 0.1 && cliphist list | rofi -dmenu -config ~/.config/rofi/colors-rofi.rasi -p 'clipboard' | cliphist decode | wl-copy"
+  },
+
+  "custom/wallpaper": {
+    "format": "󰸉",
+    "tooltip": false,
+    "on-click": "~/.local/bin/wallpaper-picker",
+    "on-click-right": "~/.local/bin/wallpaper-picker --random"
   },
 
   // Power menu — same target as SUPER+X so the bar and the keybind agree.
@@ -85,7 +147,7 @@
   // System tray. The old style.css styled #tray but no tray module was ever
   // declared in this config, so tray icons never appeared at all.
   "tray": {
-    "icon-size": 16,
+    "icon-size": 18,
     "spacing": 10
   },
 
@@ -100,8 +162,17 @@
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "format-muted": "󰝟 muted",
-    "format-icons": ["", "", ""],
+    // Material Design (nf-md) codepoints on purpose. The Font Awesome volume
+    // icons live at U+F025-F028, inside the BMP Private Use Area, which is the
+    // exact range that got silently stripped before. The nf-md equivalents sit
+    // above U+F0000 and survive; they also match the rest of the bar's icons.
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
     "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   },
@@ -109,7 +180,7 @@
   "network": {
     "interface": "enp7s0",
     "interval": 2,
-    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}",
+    "format-ethernet": "󰇚 {bandwidthDownBytes}  󰕒 {bandwidthUpBytes}",
     "tooltip-format-ethernet": "{ifname}\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
     "format-disconnected": "󰈂 offline",
     "tooltip-format-disconnected": "No connection"
