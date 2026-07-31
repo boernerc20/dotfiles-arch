@@ -1,120 +1,117 @@
 {
-  "font": "JetBrainsMono Nerd Font:size=16",
-  "height": 40,
-  "spacing": 4,
+  // Sized for DP-3: 3440x1440. The previous 40px/16px was 1080p sizing —
+  // visibly chunky on a 1440p-tall panel. 34px/13px reads as the same
+  // physical size at normal viewing distance and returns vertical space.
+  "font": "JetBrainsMono Nerd Font:size=13",
+  "height": 34,
+  "spacing": 0,
   "reload_style_on_change": true,
 
-  // order and grouping
+  // Three groups, each rendered as ONE pill (see style-base.css). Modules
+  // inside a group are separated by a hairline divider rather than each
+  // floating in its own bubble. spacing is 0 because the CSS owns padding.
   "modules-left": [
     "custom/distro",
-    "custom/hardware",
-    "pulseaudio",
-    "mpris"
+    "custom/hardware"
   ],
   "modules-center": [
     "hyprland/workspaces"
   ],
   "modules-right": [
+    "mpris",
+    "pulseaudio",
     "network",
     "custom/network-bluetooth",
     "custom/weather",
-    "clock"
+    "tray",
+    "clock",
+    "custom/power"
   ],
 
-    // hardware stats
   "custom/distro": {
     "exec": "~/.config/waybar/scripts/distro_icon.sh",
     "format": "{}",
-    "interval": 0
+    "interval": 0,
+    "tooltip": false
   },
 
-  // hardware stats
   "custom/hardware": {
     "exec": "~/.config/waybar/scripts/hardware.sh",
     "interval": 5,
-    "format": "{}"
+    "format": "{}",
+    "tooltip": false
   },
 
-  // clock
   "clock": {
-    "format": "󰥔 {:%I:%M %p  󰃭 %a %b %d}",
+    "format": "󰥔 {:%I:%M %p}",
+    "format-alt": "󰃭 {:%a %b %d}",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
 
-  // workspaces (Hyprland)
   "hyprland/workspaces": {
     "format": "{icon}",
     "format-icons": {
-      "active": "  ",
-      "default": "  ",
-      "empty":   "  "
+      "active": "",
+      "default": "",
+      "empty": ""
     },
     "persistent-workspaces": {
       "*": [1, 2, 3, 4, 5]
-    }
+    },
+    "on-click": "activate"
   },
 
-  // weather
   "custom/weather": {
     "exec": "~/.config/waybar/scripts/weather.sh",
     "interval": 600,
-    "format": "{}"
+    "format": "{}",
+    "tooltip": false
   },
 
-  // network + Bluetooth
   "custom/network-bluetooth": {
     "exec": "~/.config/waybar/scripts/network_bluetooth.sh",
     "interval": 10,
-    "format": "{}"
+    "format": "{}",
+    "tooltip": false
   },
 
-  /* power menu icon
+  // Power menu — same target as SUPER+X so the bar and the keybind agree.
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "on-click": "wlogout"
-  },*/
+    "on-click": "pkill wlogout || wlogout"
+  },
 
-  // mpris
+  // System tray. The old style.css styled #tray but no tray module was ever
+  // declared in this config, so tray icons never appeared at all.
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10
+  },
+
   "mpris": {
     "format": "󰝚 {artist} - {title}",
-    "player": "spotify" 
+    "format-paused": "󰏤 {artist} - {title}",
+    "max-length": 45,
+    "player": "spotify",
+    "on-click": "playerctl -p spotify play-pause"
   },
 
   "pulseaudio": {
-    "format": "{icon} {volume}%",             // eg. "42%"
-    "format-muted": "󰝟 MUTE",
-    "format-icons": ["","",""] // icon changes at 0, 30, 70, 100%
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟 muted",
+    "format-icons": ["", "", ""],
+    "on-click": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   },
 
-  "custom/volume": {
-    "exec":     "~/.config/waybar/scripts/volume.sh",
-    "interval": 1,
-    "format":   "{}"
-  },
-
-  /*"custom/network": {
-    "exec": "~/.config/waybar/scripts/net_speed.sh",
+  "network": {
+    "interface": "enp7s0",
     "interval": 2,
-    "format": "{}"
-  }*/
-  
-
-  // ethernet up/down
-  "network": { 
-    "interface": "enp7s0", 
-    "interval": 2, 
-    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
-    "tooltip-format-ethernet": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
-    "tooltip-format-disconnected": "No connection" 
+    "format-ethernet": " {bandwidthDownBytes}  {bandwidthUpBytes}",
+    "tooltip-format-ethernet": "{ifname}\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
+    "format-disconnected": "󰈂 offline",
+    "tooltip-format-disconnected": "No connection"
   }
-
-  /* wifi up/down
-  "network": { 
-    "interface": "wlp4s0", 
-    "interval": 2, 
-    "format-wifi": " {bandwidthDownBytes}  {bandwidthUpBytes}", 
-    "tooltip-format-wifi": "{ifname} \nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}", 
-    "tooltip-format-disconnected": "No connection" 
-  }*/
 }
