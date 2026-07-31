@@ -3,23 +3,23 @@
   // visibly chunky on a 1440p-tall panel. 34px/13px reads as the same
   // physical size at normal viewing distance and returns vertical space.
   "font": "JetBrainsMono Nerd Font:size=13",
-  "height": 34,
-  "spacing": 0,
+  "height": 38,
+  "spacing": 6,
   "reload_style_on_change": true,
 
-  // Three groups, each rendered as ONE pill (see style-base.css). Modules
-  // inside a group are separated by a hairline divider rather than each
-  // floating in its own bubble. spacing is 0 because the CSS owns padding.
+  // Spacious layout: every module is its OWN floating pill, as in the
+  // previous setup — there is plenty of horizontal room on 3440px, so
+  // density is not the goal. Styling carries the character instead.
   "modules-left": [
     "custom/distro",
-    "custom/hardware"
+    "custom/hardware",
+    "pulseaudio",
+    "mpris"
   ],
   "modules-center": [
     "hyprland/workspaces"
   ],
   "modules-right": [
-    "mpris",
-    "pulseaudio",
     "network",
     "custom/network-bluetooth",
     "custom/weather",

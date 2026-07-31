@@ -1,16 +1,25 @@
 /* ===========================================================================
-   waybar — style-base.css
+   waybar — style-base.css   |   cyberpunk / sci-fi
    ---------------------------------------------------------------------------
-   NOTE: this file is only HALF of the stylesheet. wal-hypr.sh builds the live
-   style.css as:
+   This file is only HALF the stylesheet. wal-hypr.sh builds the live one as:
        cat ~/.cache/wal/colors-waybar.css style-base.css > style.css
-   so every @color0..@color15 / @background / @foreground below is defined by
-   the wallust-generated half. Edit THIS file, never style.css — style.css is
-   overwritten on every wallpaper change and is gitignored.
+   so every @background / @foreground / @colorN below comes from the wallust
+   half. Edit THIS file — style.css is overwritten on every wallpaper change
+   and is gitignored.
 
-   Design: three grouped "pills" (left / center / right) rather than one bubble
-   per module. Modules inside a group share the pill and are separated by a
-   hairline divider. Sized for 3440x1440.
+   Design intent
+   -------------
+   Spacious, not dense: each module is its own floating pill, as in the
+   previous setup. On 3440px there is no reason to cram. The character comes
+   from the treatment, not the density:
+
+     * clipped-corner geometry (4px / 14px diagonal radius) reads as panel
+       plating rather than a soft bubble
+     * a thin bright edge on the accent side of each pill
+     * outer neon bloom via box-shadow, plus text-shadow on the glyphs so
+       type appears lit rather than printed
+     * uppercase + letter-spacing on numeric readouts for an instrument feel
+     * every color comes from the palette — no hardcoded hex anywhere
    =========================================================================== */
 
 * {
@@ -20,30 +29,21 @@
   margin: 0;
   padding: 0;
   border: none;
-  border-radius: 0;
-  /* Kill GTK's default focus/selection artifacts on the bar */
   box-shadow: none;
   text-shadow: none;
 }
 
-/* The bar itself stays fully transparent — the pills provide all surface. */
 window#waybar {
   background-color: transparent;
 }
 
-/* ── The three pills ─────────────────────────────────────────────────────── */
 .modules-left,
 .modules-center,
 .modules-right {
-  background-color: alpha(@background, 0.78);
-  border: 1px solid alpha(@color4, 0.22);
-  border-radius: 14px;
-  margin: 5px 8px;
-  padding: 0 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  background-color: transparent;
 }
 
-/* ── Modules sit flat inside their pill ──────────────────────────────────── */
+/* ── Base plate shared by every module ───────────────────────────────────── */
 #custom-distro,
 #custom-hardware,
 #custom-weather,
@@ -53,130 +53,145 @@ window#waybar {
 #mpris,
 #clock,
 #custom-power,
-#tray {
-  background-color: transparent;
-  color: @foreground;
-  padding: 0 11px;
-}
-
-/* Hairline dividers between adjacent modules in the same pill. */
-#custom-hardware,
-#pulseaudio,
-#network,
-#custom-network-bluetooth,
-#custom-weather,
 #tray,
-#clock,
-#custom-power {
-  border-left: 1px solid alpha(@color8, 0.28);
+#workspaces {
+  background-color: alpha(@background, 0.72);
+  border: 1px solid alpha(@color4, 0.30);
+  /* Clipped diagonal corners — the "plating" cue. */
+  border-radius: 4px 14px 4px 14px;
+  margin: 6px 3px;
+  padding: 0 14px;
+  color: @foreground;
+  box-shadow: 0 0 10px alpha(@background, 0.55);
 }
 
-/* ...but never on the first module of a group. */
-.modules-left  > widget:first-child > *,
-.modules-right > widget:first-child > * {
-  border-left: none;
-}
-
-/* ── Accents ─────────────────────────────────────────────────────────────── */
+/* ── Accent per module, with matching bloom ──────────────────────────────── */
 #custom-distro {
   color: @color4;
-  font-size: 15px;
-  padding: 0 12px;
-}
-
-#clock {
-  color: @color4;
-  font-weight: bold;
+  font-size: 16px;
+  padding: 0 15px;
+  border-color: alpha(@color4, 0.55);
+  text-shadow: 0 0 7px alpha(@color4, 0.85);
+  box-shadow: 0 0 12px alpha(@color4, 0.28);
 }
 
 #custom-hardware {
   color: @color6;
-}
-
-#network {
-  color: @color2;
+  letter-spacing: 0.6px;
+  border-color: alpha(@color6, 0.38);
+  text-shadow: 0 0 6px alpha(@color6, 0.55);
 }
 
 #pulseaudio {
   color: @color5;
-}
-
-#custom-weather {
-  color: @color3;
+  border-color: alpha(@color5, 0.38);
+  text-shadow: 0 0 6px alpha(@color5, 0.55);
 }
 
 #mpris {
   color: @color6;
   font-style: italic;
+  border-color: alpha(@color6, 0.32);
+  text-shadow: 0 0 6px alpha(@color6, 0.45);
 }
 
-#pulseaudio.muted {
-  color: @color8;
+#network {
+  color: @color2;
+  letter-spacing: 0.4px;
+  border-color: alpha(@color2, 0.38);
+  text-shadow: 0 0 6px alpha(@color2, 0.50);
 }
 
-#network.disconnected {
-  color: @color1;
+#custom-network-bluetooth {
+  color: @color5;
+  border-color: alpha(@color5, 0.34);
+  text-shadow: 0 0 6px alpha(@color5, 0.45);
 }
 
-/* ── Workspaces ──────────────────────────────────────────────────────────── */
+#custom-weather {
+  color: @color3;
+  border-color: alpha(@color3, 0.34);
+  text-shadow: 0 0 6px alpha(@color3, 0.45);
+}
+
+#clock {
+  color: @color4;
+  font-weight: bold;
+  letter-spacing: 1.1px;
+  padding: 0 17px;
+  border-color: alpha(@color4, 0.55);
+  text-shadow: 0 0 9px alpha(@color4, 0.80);
+  box-shadow: 0 0 14px alpha(@color4, 0.24);
+}
+
+/* ── Workspaces — the one place that should feel alive ───────────────────── */
 #workspaces {
-  background-color: transparent;
-  padding: 0 2px;
+  padding: 0 8px;
+  border-color: alpha(@color4, 0.34);
 }
 
 #workspaces button {
   background-color: transparent;
-  color: alpha(@color8, 0.75);
-  padding: 0 7px;
+  border: none;
+  box-shadow: none;
+  color: alpha(@color8, 0.55);
+  padding: 0 8px;
   margin: 0;
-  border-radius: 10px;
-  font-size: 11px;
-  transition: color 0.18s ease, background-color 0.18s ease;
+  font-size: 10px;
+  border-radius: 0;
+  transition: color 0.20s ease, text-shadow 0.20s ease;
 }
 
 #workspaces button.active {
   color: @color4;
-  background-color: alpha(@color4, 0.16);
   font-size: 13px;
+  /* Layered bloom: tight core + wide halo = neon tube, not a flat dot. */
+  text-shadow: 0 0 6px @color4, 0 0 14px alpha(@color4, 0.75);
 }
 
 #workspaces button.urgent {
   color: @color1;
-  background-color: alpha(@color1, 0.20);
+  text-shadow: 0 0 6px @color1, 0 0 14px alpha(@color1, 0.75);
 }
 
 #workspaces button:hover {
   color: @foreground;
-  background-color: alpha(@color4, 0.10);
-  /* GTK adds an inset highlight on hover by default — suppress it. */
+  background-color: transparent;
   box-shadow: none;
-  text-shadow: none;
+  text-shadow: 0 0 8px alpha(@foreground, 0.65);
 }
 
-/* ── Power button ────────────────────────────────────────────────────────── */
+/* ── Power ───────────────────────────────────────────────────────────────── */
 #custom-power {
   color: @color1;
-  padding: 0 14px 0 12px;
   font-size: 14px;
+  padding: 0 15px;
+  border-color: alpha(@color1, 0.48);
+  text-shadow: 0 0 7px alpha(@color1, 0.70);
 }
 
 #custom-power:hover {
   color: @background;
   background-color: @color1;
-  border-radius: 0 13px 13px 0;
+  text-shadow: none;
+  box-shadow: 0 0 16px alpha(@color1, 0.75);
 }
 
-/* ── Interactive feedback ────────────────────────────────────────────────── */
+/* ── Hover: lift the bloom rather than change the fill ───────────────────── */
 #mpris:hover,
 #pulseaudio:hover,
-#clock:hover {
-  color: @color4;
-  background-color: alpha(@color4, 0.10);
+#clock:hover,
+#custom-hardware:hover,
+#network:hover,
+#custom-weather:hover {
+  background-color: alpha(@background, 0.88);
+  box-shadow: 0 0 16px alpha(@color4, 0.34);
 }
 
 /* ── Tray ────────────────────────────────────────────────────────────────── */
 #tray {
-  padding: 0 8px;
+  padding: 0 12px;
+  border-color: alpha(@color8, 0.28);
 }
 
 #tray > .passive {
@@ -187,14 +202,27 @@ window#waybar {
   -gtk-icon-effect: highlight;
 }
 
-/* Tooltips follow the palette instead of the GTK theme default. */
+/* ── States ──────────────────────────────────────────────────────────────── */
+#pulseaudio.muted {
+  color: @color8;
+  border-color: alpha(@color8, 0.28);
+  text-shadow: none;
+}
+
+#network.disconnected {
+  color: @color1;
+  border-color: alpha(@color1, 0.45);
+  text-shadow: 0 0 6px alpha(@color1, 0.55);
+}
+
+/* ── Tooltips follow the palette, not the GTK theme ──────────────────────── */
 tooltip {
   background-color: alpha(@background, 0.96);
-  border: 1px solid alpha(@color4, 0.35);
-  border-radius: 10px;
+  border: 1px solid alpha(@color4, 0.40);
+  border-radius: 4px 14px 4px 14px;
 }
 
 tooltip label {
   color: @foreground;
-  padding: 4px;
+  padding: 5px;
 }

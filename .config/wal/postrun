@@ -1,9 +1,66 @@
 #!/usr/bin/env python3
-"""Pywal post-run hook — syncs colors to Qt (qt6ct, Kvantum) and GTK (Thunar)."""
+"""Theming hook — syncs the palette to Qt (qt6ct, Kvantum) and GTK 3 + GTK 4.
+
+Run by wallust as a [hooks] entry (previously pywal's postrun). Reads
+~/.cache/wal/colors.json, which wallust generates from a template.
+
+Two behaviours worth knowing about:
+
+1. DARKNESS CLAMP. App chrome backgrounds are forced below a maximum
+   luminance. Wallpaper-derived backgrounds occasionally come out mid-grey
+   (a salience run once produced #423A42), which looks washed out next to
+   apps that hardcode near-black. Clamping here — rather than in the wallust
+   templates — keeps it in ONE place and covers GTK 3, GTK 4, Qt and Kvantum
+   together. The terminal and bar keep the unclamped palette, since those
+   sit directly on the wallpaper and benefit from tracking it.
+
+2. GTK 4 / libadwaita. ~/.config/gtk-4.0/gtk.css used to be a SYMLINK to
+   Materia-dark, so every GTK4 app ignored the palette entirely and rendered
+   Materia's blue (#8ab4f8). It is now a generated real file that imports
+   Materia for widget styling and then overrides the colors. Both naming
+   schemes are emitted: legacy `theme_*` (what Materia and older GTK4 themes
+   read) and libadwaita's `window_bg_color` / `view_bg_color` / `accent_color`
+   family (what modern GNOME-era apps actually read). Defining only one of
+   the two leaves half your apps untouched.
+"""
 import json, os
 
 colors_file = os.path.expanduser('~/.cache/wal/colors.json')
 output_file = os.path.expanduser('~/.cache/wal/colors-qt6ct.conf')
+
+# Maximum relative luminance (0-1) allowed for app-chrome backgrounds.
+MAX_BG_LUMINANCE = 0.055
+
+
+def _rgb(h):
+    h = h.lstrip('#')
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def _hex(r, g, b):
+    return '#{:02x}{:02x}{:02x}'.format(max(0, min(255, int(r))),
+                                        max(0, min(255, int(g))),
+                                        max(0, min(255, int(b))))
+
+
+def luminance(h):
+    r, g, b = _rgb(h)
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+
+
+def clamp_dark(h, ceiling=MAX_BG_LUMINANCE):
+    """Scale a color toward black until its luminance is at or below ceiling.
+
+    Scales all three channels by the same factor so the hue is preserved —
+    a purple-tinted background stays purple, just deeper.
+    """
+    lum = luminance(h)
+    if lum <= ceiling or lum == 0:
+        return h
+    factor = ceiling / lum
+    r, g, b = _rgb(h)
+    return _hex(r * factor, g * factor, b * factor)
+
 
 with open(colors_file) as f:
     c = json.load(f)
@@ -39,7 +96,8 @@ def lighten(h, amount):
     return '#{:02x}{:02x}{:02x}'.format(
         min(255, r+amount), min(255, g+amount), min(255, b+amount))
 
-raw_bg  = sp['background']
+# App-chrome background: clamped so it never comes out washed-out grey.
+raw_bg  = clamp_dark(sp['background'])
 raw_fg  = sp['foreground']
 raw_c2  = co['color2']
 raw_c4  = co['color4']
@@ -83,12 +141,21 @@ with open(kvantum_cfg, 'w') as f:
 # --- GTK CSS for Thunar and other GTK apps ---
 gtk_css_path = os.path.expanduser('~/.config/gtk-3.0/gtk.css')
 
-BG  = sp['background']
+BG  = clamp_dark(sp['background'])   # clamped: app chrome, not the wallpaper
 FG  = sp['foreground']
 C1  = co['color1']   # muted accent
 C2  = co['color2']   # selection bg
 C4  = co['color4']   # focus/active
 C8  = co['color8']   # unfocused fg
+
+# Surfaces layered above the base background, derived so they stay in-hue.
+def _mix(h, amount):
+    r, g, b = _rgb(h)
+    return _hex(r + amount, g + amount, b + amount)
+
+BG_VIEW   = _mix(BG, 6)    # list/content areas
+BG_CARD   = _mix(BG, 10)   # cards, popovers
+BG_HEADER = _mix(BG, 14)   # headerbars, dialogs
 
 gtk_css = f"""/* pywal colors — auto-generated, do not edit */
 @define-color theme_bg_color {BG};
@@ -126,6 +193,76 @@ scrollbar slider:hover {{ background-color: {C4}; }}
 os.makedirs(os.path.dirname(gtk_css_path), exist_ok=True)
 with open(gtk_css_path, 'w') as f:
     f.write(gtk_css)
+
+# --- GTK 4 / libadwaita ---------------------------------------------------
+# This path was previously a SYMLINK to Materia-dark, which meant no GTK4 app
+# ever saw the palette. Replace the symlink with a generated file that keeps
+# Materia's widget styling via @import and then overrides the colors.
+#
+# Both naming schemes are emitted on purpose:
+#   theme_*            — legacy GTK4 themes (Materia reads these)
+#   window_bg_color... — libadwaita (modern GNOME-era apps read these)
+# Setting only one leaves half the apps untouched.
+gtk4_dir = os.path.expanduser('~/.config/gtk-4.0')
+gtk4_css_path = os.path.join(gtk4_dir, 'gtk.css')
+materia_gtk4 = '/usr/share/themes/Materia-dark/gtk-4.0/gtk.css'
+
+gtk4_css = ''
+if os.path.exists(materia_gtk4):
+    # @import must be the first rule in a GTK CSS file.
+    gtk4_css += f'@import url("file://{materia_gtk4}");\n\n'
+
+gtk4_css += f"""/* Palette colors — auto-generated by ~/.config/wal/postrun. Do not edit.
+   Background is darkness-clamped (see MAX_BG_LUMINANCE in that script). */
+
+/* Legacy GTK4 theme colors */
+@define-color theme_bg_color {BG};
+@define-color theme_fg_color {FG};
+@define-color theme_base_color {BG_VIEW};
+@define-color theme_text_color {FG};
+@define-color theme_selected_bg_color {C4};
+@define-color theme_selected_fg_color {BG};
+@define-color insensitive_bg_color {BG};
+@define-color insensitive_fg_color {C8};
+@define-color borders alpha({C4}, 0.30);
+
+/* libadwaita named colors */
+@define-color window_bg_color {BG};
+@define-color window_fg_color {FG};
+@define-color view_bg_color {BG_VIEW};
+@define-color view_fg_color {FG};
+@define-color headerbar_bg_color {BG_HEADER};
+@define-color headerbar_fg_color {FG};
+@define-color headerbar_border_color alpha({C4}, 0.25);
+@define-color headerbar_backdrop_color {BG};
+@define-color sidebar_bg_color {BG};
+@define-color sidebar_fg_color {FG};
+@define-color sidebar_backdrop_color {BG};
+@define-color secondary_sidebar_bg_color {BG};
+@define-color card_bg_color {BG_CARD};
+@define-color card_fg_color {FG};
+@define-color dialog_bg_color {BG_HEADER};
+@define-color dialog_fg_color {FG};
+@define-color popover_bg_color {BG_CARD};
+@define-color popover_fg_color {FG};
+@define-color accent_color {C4};
+@define-color accent_bg_color {C4};
+@define-color accent_fg_color {BG};
+@define-color destructive_color {C1};
+@define-color destructive_bg_color {C1};
+@define-color destructive_fg_color {BG};
+@define-color success_color {C2};
+@define-color warning_color {C1};
+@define-color error_color {C1};
+@define-color scrollbar_outline_color alpha({C8}, 0.35);
+"""
+
+os.makedirs(gtk4_dir, exist_ok=True)
+# Must unlink first: writing through a symlink would clobber the system theme.
+if os.path.islink(gtk4_css_path):
+    os.unlink(gtk4_css_path)
+with open(gtk4_css_path, 'w') as f:
+    f.write(gtk4_css)
 
 # Reload GTK settings so running apps pick up new colors
 os.system('pkill -HUP gsd-xsettings 2>/dev/null; xsettingsd -c /dev/null 2>/dev/null &')
