@@ -1,6 +1,6 @@
 {
     "label": "lock",
-    "action": "pidof hyprlock || hyprlock",
+    "action": "notify-send 'Lock disabled' 'Locking is disabled pending a fix — see conf.d/07-binds.conf'",
     "text": "Lock",
     "keybind": "l"
 }
