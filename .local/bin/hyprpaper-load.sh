@@ -9,16 +9,20 @@ if [[ -z "$WALLPAPER" || ! -f "$WALLPAPER" ]]; then
     exit 1
 fi
 
-# Wait for hyprpaper to be ready (max 5 seconds)
+# Wait for hyprpaper to be ready (max 5 seconds).
+# Uses `listactive`, NOT `listloaded`: hyprpaper 0.8.x dropped the
+# preload/unload/listloaded IPC verbs, which now return "invalid hyprpaper
+# request". The old listloaded probe therefore never succeeded and this loop
+# always burned its full 5s timeout before continuing. Fixed 2026-07-30.
 for i in {1..10}; do
-    if hyprctl hyprpaper listloaded &>/dev/null; then
+    if hyprctl hyprpaper listactive &>/dev/null; then
         break
     fi
     sleep 0.5
 done
 
-# Preload and set the wallpaper
-hyprctl hyprpaper preload "$WALLPAPER"
+# Set the wallpaper. `wallpaper` loads the image itself — no preload needed
+# (and preload no longer exists, see above).
 hyprctl hyprpaper wallpaper ",$WALLPAPER"
 
 echo "Loaded wallpaper: $WALLPAPER"

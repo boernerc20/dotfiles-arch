@@ -19,10 +19,11 @@ fi
 # 1) Generate new Wal palette
 wal -i "$WP"
 
-# 2) Tell Hyprpaper to preload the image
-hyprctl hyprpaper preload "$WP"
-
-# 3) Set it on all monitors
+# 2) Set the wallpaper on all monitors.
+# NOTE: the old `hyprctl hyprpaper preload` call was removed 2026-07-30 — hyprpaper
+# 0.8.x dropped the preload/unload/listloaded IPC verbs and they now return
+# "error: invalid hyprpaper request". `wallpaper` loads the image itself, so the
+# preload step was both broken and unnecessary.
 hyprctl hyprpaper wallpaper ",$WP"
 
 # 4) Set waybar
@@ -50,8 +51,11 @@ else
     echo "Warning: pywalfox not found, skipping Firefox theming" >&2
 fi
 
-# 7) Link firefox home page (only if the profile dir exists)
-if [ -d "$HOME/.config/firefox/home" ]; then
+# 7) Link firefox home page (only if the profile dir exists).
+# ~/.config/firefox/home/colors.css is already a SYMLINK to ~/.cache/wal/colors.css,
+# so it updates itself when pywal regenerates the cache. The old unconditional cp
+# errored with "are the same file" on every run; skip when it's already linked.
+if [ -d "$HOME/.config/firefox/home" ] && [ ! -L "$HOME/.config/firefox/home/colors.css" ]; then
     cp ~/.cache/wal/colors.css ~/.config/firefox/home/colors.css
 fi
 
