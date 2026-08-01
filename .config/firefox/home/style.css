@@ -1,7 +1,13 @@
-@import url('colors.css');
+/* colors.css and surfaces.css are pulled in as <link> elements by index.html,
+   in that order, so the page's cache-buster can refresh them on a wallpaper
+   change. They are deliberately NOT @import-ed here.
+
+   Use --app-* for anything that should match native apps: colors.css alone
+   gave this page the raw wallpaper background, which sat lighter than every
+   GTK/Qt window and made the browser look like a different theme. */
 
 :root {
-    --color-bg: var(--background);
+    --color-bg: var(--app-bg);
     --color-fg: var(--color12);
     --color-link: var(--color12);
     --color-link-visited: var(--color12);
@@ -128,17 +134,28 @@ a:hover {
   font-family: var(--text-font);
   text-align: left;
 
-  background-color: var(--color2);       /* #565769—mid‑tone grey */
-  color: var(--foreground);              /* your wal fg */
-  border: 1px solid var(--color4);       /* highlight border (#606590) */
+  /* A dark surface with an accent EDGE, not an accent fill. The comment that
+     used to sit here claimed --color2 was "mid-tone grey"; on this palette it
+     resolves to #CA4CBD at 43.5% luminance, so the search box rendered as a
+     slab of saturated magenta — by far the brightest thing on the desktop.
+     Accent belongs on the border and the focus ring. */
+  background-color: var(--app-card);
+  color: var(--app-fg);
+  border: 1px solid var(--app-border);
   border-radius: 2rem;                   /* pill shape */
 
   box-shadow: 0 2px 8px rgba(0,0,0,0.6);  /* subtle depth */
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:hover {
+  background-color: var(--app-hover);
 }
 
 .search-input:focus {
-  border-color: var(--color6);  /* #489BB1—your accent teal */
+  border-color: var(--color6);
+  box-shadow: 0 0 0 1px var(--color6), 0 2px 12px rgba(0,0,0,0.7);
 }
 
 .search-input::placeholder {

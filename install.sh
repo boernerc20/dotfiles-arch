@@ -26,6 +26,22 @@ section() { echo -e "\n${CYAN}════════════════�
 # ── Preflight ────────────────────────────────────────────────
 [[ $EUID -eq 0 ]] && error "Do not run as root. Run as your user with sudo access."
 
+# ── Chassis detection ────────────────────────────────────────
+# This repo provisions more than one machine, so the laptop-only pieces (TLP
+# power management, lid-close-to-suspend) are gated rather than removed. They
+# were previously unconditional, which meant a desktop got a TLP config and a
+# logind lid rule that could never fire.
+if hostnamectl chassis 2>/dev/null | grep -qE '^(laptop|notebook|convertible|tablet)$'; then
+    IS_LAPTOP=yes
+elif [[ -d /sys/class/power_supply/BAT0 || -d /sys/class/power_supply/BAT1 ]]; then
+    # hostnamectl reports "desktop" on some boards with a bad DMI chassis type;
+    # the presence of a battery is the more reliable signal.
+    IS_LAPTOP=yes
+else
+    IS_LAPTOP=no
+fi
+info "Chassis detected: $([[ $IS_LAPTOP == yes ]] && echo laptop || echo desktop)"
+
 section "Checking network connectivity"
 if ! ping -c 1 archlinux.org &>/dev/null; then
     warn "No internet. Connect with: nmtui"
@@ -65,7 +81,9 @@ PKGS=(
     xdg-desktop-portal-hyprland
 
     # Terminal + shell
-    alacritty
+    # kitty, not alacritty: switched for yazi's image previews, which need
+    # the kitty graphics protocol.
+    kitty
     zsh
     zsh-completions
 
@@ -84,17 +102,20 @@ PKGS=(
     wireplumber
 
     # Theming
-    python-pywal
+    # wallust (AUR, listed below) replaced pywal as the palette generator.
+    # python-pywal is deliberately NOT installed: wallust's `backend = "wal"`
+    # is its own reimplementation of that algorithm, not a shell-out to the
+    # pywal binary, so nothing needs the original package.
     ttf-jetbrains-mono-nerd
     noto-fonts
     noto-fonts-emoji
+    python-fonttools          # waybar/scripts/verify-glyphs.py
 
     # System tools
     brightnessctl
     playerctl
     networkmanager
     network-manager-applet
-    tlp
     bluez
     bluez-utils
     blueman
@@ -102,9 +123,14 @@ PKGS=(
     # Utilities
     btop
     cava
-    neofetch
+    # fastfetch, not neofetch: neofetch was discontinued upstream and dropped
+    # from the Arch repositories, so listing it aborts the whole install.
+    # animated-neofetch.sh already prefers fastfetch and only falls back to
+    # neofetch, so nothing else has to change.
+    fastfetch
     trash-cli
     jq
+    pacman-contrib           # checkupdates, for waybar's updates module
     wget
     curl
     rsync
@@ -115,10 +141,12 @@ PKGS=(
     firefox
 
     # Display manager
-    ly
+    sddm
 
     # Notifications
-    dunst
+    # mako, not dunst. This system ran with NO notification daemon at all for
+    # a long time because dunst was listed here but never actually installed.
+    mako
     libnotify
 
     # Screenshot deps
@@ -130,14 +158,25 @@ PKGS=(
 
     # Clipboard
     wl-clipboard
+    cliphist                 # SUPER+V history picker
+
+    # Desktop utilities
+    hyprpicker               # SUPER+C colour picker
+    pavucontrol
 
     # AUR packages
+    wallust                  # palette generator (replaced pywal)
     bibata-cursor-theme
     zsh-theme-powerlevel10k-git
     pywalfox-native
     tty-clock
     pipes.sh
 )
+
+# Laptop-only power management; see the chassis check above.
+if [[ "$IS_LAPTOP" == "yes" ]]; then
+    PKGS+=(tlp)
+fi
 
 yay -S --noconfirm --needed \
     --answerclean None --answerdiff None \
@@ -149,12 +188,18 @@ success "Packages installed"
 section "Enabling services"
 
 sudo systemctl enable NetworkManager
-sudo systemctl enable tlp
-# Display manager — try ly, fall back to greetd
-if systemctl enable ly 2>/dev/null; then
-    success "ly display manager enabled"
+
+# TLP is laptop power management; enabling it on a desktop does nothing useful
+# and it is not installed there. See the chassis check further down.
+if [[ "$IS_LAPTOP" == "yes" ]]; then
+    sudo systemctl enable tlp
+fi
+
+# Display manager — try sddm, fall back to greetd
+if systemctl enable sddm 2>/dev/null; then
+    success "sddm display manager enabled"
 else
-    warn "ly failed, installing greetd as fallback"
+    warn "sddm failed, installing greetd as fallback"
     yay -S --noconfirm --needed greetd greetd-tuigreet
     sudo mkdir -p /etc/greetd
     sudo tee /etc/greetd/config.toml > /dev/null <<'GREETEOF'
@@ -217,33 +262,40 @@ success "Dotfiles ready at $DOTFILES_DIR"
 # ── Deploy dotfiles ──────────────────────────────────────────
 section "Deploying dotfiles"
 
-# Config directories to deploy
-CONFIG_DIRS=(
-    alacritty
-    btop
-    cava
-    gtk-2.0
-    gtk-3.0
-    gtk-4.0
-    hypr
-    neofetch
-    nvim
-    nwg-look
-    pcmanfm
-    rofi
-    wal
-    waybar
-    wlogout
-    xsettingsd
-)
-
+# Deploy everything the repo TRACKS under .config, rather than a hand-kept list.
+#
+# The previous hardcoded CONFIG_DIRS had drifted twice over: it still listed
+# alacritty (no longer in the repo) and omitted eleven tracked directories —
+# kitty, mako, yazi, firefox, wallust, systemd, xdg-desktop-portal, OpenRGB,
+# htop, environment.d and the mimeapps.list. wallust is the entire theming
+# engine, so a fresh install came up with no palette configuration at all and
+# nothing to generate colours from.
+#
+# Enumerating from `git ls-files` rather than globbing the working tree means
+# untracked scratch files in the clone are never deployed, and the list cannot
+# fall out of date again.
 mkdir -p "$HOME/.config"
 
-for dir in "${CONFIG_DIRS[@]}"; do
-    if [[ -d "$DOTFILES_DIR/.config/$dir" ]]; then
-        cp -r "$DOTFILES_DIR/.config/$dir" "$HOME/.config/"
-        info "Deployed .config/$dir"
+mapfile -t CONFIG_ENTRIES < <(
+    git -C "$DOTFILES_DIR" ls-files .config/ | cut -d/ -f2 | sort -u
+)
+
+[[ ${#CONFIG_ENTRIES[@]} -eq 0 ]] && error "No tracked .config entries found in $DOTFILES_DIR"
+
+for entry in "${CONFIG_ENTRIES[@]}"; do
+    src="$DOTFILES_DIR/.config/$entry"
+    if [[ -d "$src" ]]; then
+        # Copy CONTENTS into the target dir. Plain `cp -r src dest/` would nest
+        # as dest/entry/entry when the directory already exists, which made
+        # re-running this script produce a broken tree.
+        mkdir -p "$HOME/.config/$entry"
+        cp -r "$src/." "$HOME/.config/$entry/"
+    elif [[ -f "$src" ]]; then
+        cp "$src" "$HOME/.config/"
+    else
+        continue
     fi
+    info "Deployed .config/$entry"
 done
 
 # Deploy home dotfiles
@@ -338,24 +390,40 @@ ZSHLOCAL
     success "Created ~/.zshrc.local"
 fi
 
-# ── Initial pywal run ────────────────────────────────────────
-section "Generating initial pywal colors"
+# ── Initial palette run ──────────────────────────────────────
+section "Generating initial colours (wallust)"
 
+# wal-hypr.sh is the single dispatcher: it runs wallust, then propagates the
+# result to hyprland, waybar, rofi, mako, kitty, cava, yazi, GTK, Qt and
+# Firefox. Calling it here rather than invoking the palette generator directly
+# means a fresh install lands in exactly the same state as a wallpaper switch,
+# instead of a half-themed one that only looks right after the first SUPER+W.
 FIRST_WALLPAPER=$(find "$HOME/pics/wallpapers" -maxdepth 1 \( -name "*.png" -o -name "*.jpg" \) 2>/dev/null | head -1)
 
 if [[ -n "$FIRST_WALLPAPER" ]]; then
-    wal -i "$FIRST_WALLPAPER" -n && success "Pywal colors generated from $FIRST_WALLPAPER"
-    # Build initial waybar style
-    cat "$HOME/.cache/wal/colors-waybar.css" "$HOME/.config/waybar/style-base.css" \
-        > "$HOME/.config/waybar/style.css" 2>/dev/null || true
+    if [[ -x "$HOME/.local/bin/wal-hypr.sh" ]]; then
+        "$HOME/.local/bin/wal-hypr.sh" "$FIRST_WALLPAPER" \
+            && success "Theme generated from $(basename "$FIRST_WALLPAPER")" \
+            || warn "wal-hypr.sh reported an error — re-run it after first login"
+    else
+        # Fallback: at least populate the cache so nothing reads an empty palette.
+        wallust run "$FIRST_WALLPAPER" && success "wallust palette generated"
+        cat "$HOME/.cache/wal/colors-waybar.css" "$HOME/.config/waybar/style-base.css" \
+            > "$HOME/.config/waybar/style.css" 2>/dev/null || true
+    fi
 else
-    warn "No wallpaper found — run 'wal -i ~/pics/wallpapers/<image>' after first boot"
+    warn "No wallpaper found — run '~/.local/bin/wal-hypr.sh <image>' after first boot"
 fi
 
-# ── TLP laptop config ────────────────────────────────────────
-section "Configuring TLP power management"
+# ── Laptop-only power configuration ──────────────────────────
+# Both blocks below are gated on the chassis check at the top of this script.
+# Previously they ran unconditionally, so a desktop got /etc/tlp.d written for
+# a package it does not have installed, plus a logind lid rule for a lid that
+# does not exist.
+if [[ "$IS_LAPTOP" == "yes" ]]; then
+    section "Configuring TLP power management"
 
-sudo tee /etc/tlp.d/01-laptop.conf > /dev/null <<'TLPEOF'
+    sudo tee /etc/tlp.d/01-laptop.conf > /dev/null <<'TLPEOF'
 # Laptop power management overrides
 CPU_SCALING_GOVERNOR_ON_AC=performance
 CPU_SCALING_GOVERNOR_ON_BAT=powersave
@@ -365,15 +433,17 @@ WIFI_PWR_ON_AC=off
 WIFI_PWR_ON_BAT=on
 TLPEOF
 
-success "TLP configured"
+    success "TLP configured"
 
-# ── Lid close → suspend ──────────────────────────────────────
-section "Configuring lid switch behavior"
+    section "Configuring lid switch behavior"
 
-sudo sed -i 's/#HandleLidSwitch=suspend/HandleLidSwitch=suspend/' /etc/systemd/logind.conf
-sudo sed -i 's/#HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=ignore/' /etc/systemd/logind.conf
+    sudo sed -i 's/#HandleLidSwitch=suspend/HandleLidSwitch=suspend/' /etc/systemd/logind.conf
+    sudo sed -i 's/#HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=ignore/' /etc/systemd/logind.conf
 
-success "Lid close will suspend"
+    success "Lid close will suspend"
+else
+    info "Desktop chassis — skipping TLP and lid-switch configuration"
+fi
 
 # ── XDG user dirs ────────────────────────────────────────────
 section "Creating XDG user directories"

@@ -65,12 +65,21 @@ else
     echo "Warning: pywalfox not found, skipping Firefox theming" >&2
 fi
 
-# 7) Link firefox home page (only if the profile dir exists).
-# ~/.config/firefox/home/colors.css is already a SYMLINK to ~/.cache/wal/colors.css,
-# so it updates itself when pywal regenerates the cache. The old unconditional cp
-# errored with "are the same file" on every run; skip when it's already linked.
-if [ -d "$HOME/.config/firefox/home" ] && [ ! -L "$HOME/.config/firefox/home/colors.css" ]; then
-    cp ~/.cache/wal/colors.css ~/.config/firefox/home/colors.css
+# 7) Link firefox home page stylesheets (only if the profile dir exists).
+# Both are SYMLINKS into ~/.cache/wal, so they update themselves whenever the
+# palette is regenerated. The old unconditional cp errored with "are the same
+# file" on every run; -f + -n replaces a stale link without following it.
+#
+# surfaces.css carries the canonical app surface ramp (see ~/.config/wal/postrun)
+# and is what keeps the start page on the same background as native apps. If it
+# is missing the page silently falls back to whatever colors.css provides, so
+# the link is re-established every run rather than only at install time.
+if [ -d "$HOME/.config/firefox/home" ]; then
+    for sheet in colors.css surfaces.css; do
+        if [ -e "$HOME/.cache/wal/$sheet" ]; then
+            ln -sfn "$HOME/.cache/wal/$sheet" "$HOME/.config/firefox/home/$sheet"
+        fi
+    done
 fi
 
 # 8) Set rofi — symlink current wallpaper for the template's background-image,

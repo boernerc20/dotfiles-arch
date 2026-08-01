@@ -62,12 +62,11 @@ window#waybar {
 #custom-updates,
 #custom-notification,
 #disk,
-#network,
+#custom-network,
 #pulseaudio,
 #mpris,
 #clock,
 #privacy,
-#tray,
 #workspaces {
   background-color: alpha(@background, 0.72);
   border: 1px solid alpha(@color4, 0.30);
@@ -109,11 +108,24 @@ window#waybar {
   text-shadow: 0 0 6px alpha(@color6, 0.45);
 }
 
-#network {
-  color: @color2;
-  letter-spacing: 0.4px;
-  border-color: alpha(@color2, 0.38);
-  text-shadow: 0 0 6px alpha(@color2, 0.50);
+/* Traffic sparkline. letter-spacing is explicitly 0: any tracking opens gaps
+   between the block glyphs and breaks the continuous-trace illusion. The cell
+   colours are set per-character by Pango markup in the script, so `color`
+   here only affects the leading icon. The glow is kept low — 14 lit cells
+   bloom far more than a couple of numbers did. */
+#custom-network {
+  color: @color6;
+  letter-spacing: 0;
+  padding: 0 13px;
+  font-size: 16px;
+  border-color: alpha(@color6, 0.38);
+  text-shadow: 0 0 5px alpha(@color6, 0.35);
+}
+
+#custom-network.disconnected {
+  color: @color1;
+  border-color: alpha(@color1, 0.45);
+  text-shadow: 0 0 6px alpha(@color1, 0.55);
 }
 
 #custom-network-bluetooth {
@@ -210,45 +222,6 @@ window#waybar {
   text-shadow: none;
 }
 
-/* ── Taskbar ─────────────────────────────────────────────────────────────── */
-/* Deliberately NOT on the shared module plate. waybar's wlr/taskbar exposes
-   only button.{active,minimized,maximized,fullscreen} — there is no "empty"
-   class to hook (checked in waybar-wlr-taskbar(5)), so a plate would sit on
-   the bar as an empty bordered stub on any workspace with no windows. Letting
-   the icons float means the module simply disappears when there is nothing to
-   show, which is also how the reference shots handle it. */
-#taskbar {
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-  margin: 0 3px;
-  padding: 0;
-}
-
-#taskbar button {
-  padding: 0 7px;
-  margin: 4px 2px;
-  border-radius: 3px 11px 3px 11px;
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-  transition: all 0.20s ease;
-}
-
-#taskbar button.active {
-  background-color: alpha(@color4, 0.22);
-  box-shadow: inset 0 0 0 1px alpha(@color4, 0.50);
-}
-
-#taskbar button:hover {
-  background-color: alpha(@color4, 0.16);
-}
-
-/* Minimised windows dim rather than vanish. */
-#taskbar button.minimized {
-  -gtk-icon-effect: dim;
-}
-
 /* Privacy only appears while something is actually capturing — make it loud. */
 #privacy {
   color: @color1;
@@ -321,25 +294,11 @@ window#waybar {
 #clock:hover,
 #disk:hover,
 #custom-hardware:hover,
-#network:hover,
+#custom-network:hover,
 #custom-weather:hover,
 #custom-network-bluetooth:hover {
   background-color: alpha(@background, 0.88);
   box-shadow: 0 0 16px alpha(@color4, 0.34);
-}
-
-/* ── Tray ────────────────────────────────────────────────────────────────── */
-#tray {
-  padding: 0 13px;
-  border-color: alpha(@color8, 0.28);
-}
-
-#tray > .passive {
-  -gtk-icon-effect: dim;
-}
-
-#tray > .needs-attention {
-  -gtk-icon-effect: highlight;
 }
 
 /* ── States ──────────────────────────────────────────────────────────────── */
@@ -349,11 +308,8 @@ window#waybar {
   text-shadow: none;
 }
 
-#network.disconnected {
-  color: @color1;
-  border-color: alpha(@color1, 0.45);
-  text-shadow: 0 0 6px alpha(@color1, 0.55);
-}
+/* #custom-network.disconnected lives with the sparkline rules above, so the
+   two network states stay next to each other. */
 
 /* ── Tooltips follow the palette, not the GTK theme ──────────────────────── */
 tooltip {

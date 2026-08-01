@@ -5,11 +5,17 @@
     <meta charset="UTF-8">
     <title>home</title>
     <link rel="icon" type="image/x-icon" href="icons/arch.png">
+    <!-- Order matters: surfaces.css overrides colors.css, style.css consumes
+         both. surfaces.css is a real <link> rather than an @import inside
+         style.css so the cache-buster below can reach it — @import-ed sheets
+         are not <link> elements and were being served stale after a wallpaper
+         change, leaving this page on the previous palette's background. -->
     <link rel="stylesheet" href="colors.css">
+    <link rel="stylesheet" href="surfaces.css">
     <link rel="stylesheet" href="style.css">
     <script>
       function refreshCSS() {
-        ['colors.css','style.css'].forEach(file => {
+        ['colors.css','surfaces.css','style.css'].forEach(file => {
           const link = document.querySelector(`link[href*="${file}"]`);
           if (!link) return;
           const href = link.getAttribute('href').split('?')[0];

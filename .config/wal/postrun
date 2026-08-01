@@ -6,13 +6,32 @@ Run by wallust as a [hooks] entry (previously pywal's postrun). Reads
 
 Two behaviours worth knowing about:
 
-1. DARKNESS CLAMP. App chrome backgrounds are forced below a maximum
-   luminance. Wallpaper-derived backgrounds occasionally come out mid-grey
-   (a salience run once produced #423A42), which looks washed out next to
-   apps that hardcode near-black. Clamping here — rather than in the wallust
-   templates — keeps it in ONE place and covers GTK 3, GTK 4, Qt and Kvantum
-   together. The terminal and bar keep the unclamped palette, since those
-   sit directly on the wallpaper and benefit from tracking it.
+1. ONE CANONICAL SURFACE RAMP. Every toolkit gets its window/base/card colors
+   from the same five values computed here, so Firefox, GTK apps, Qt apps and
+   the browser start page agree on what "the background" is.
+
+   This was previously NOT the case, and the drift was large. Measured on the
+   neon-porsche wallpaper:
+
+       Spotify (hardcoded)      #121212   7.1% luminance
+       Firefox start page       #161016   6.9%   (raw special.background)
+       GTK apps                 #110c11   5.3%   (clamped background)
+       Firefox chrome / Qt      #423A42  23.6%   (colors.color0)
+
+   colors.color0 is the ANSI "black" slot, and wallust does not guarantee it
+   is anywhere near black — here it came out a 23.6% mid-grey. pywalfox uses
+   it for Firefox toolbars and the qt6ct block below used it for window and
+   base, which is why Firefox chrome and Qt apps looked washed-out purple
+   next to a near-black Spotify.
+
+   The ceiling is set near Spotify's own #121212, because Spotify is not
+   themeable without spicetify and is therefore the fixed point everything
+   else has to meet.
+
+   The terminal and the bar deliberately keep the UNCLAMPED palette: they sit
+   directly on the wallpaper and benefit from tracking it. Kitty reads
+   colors-kitty.conf, a separate wallust template, so nothing here touches
+   terminal ANSI colors.
 
 2. GTK 4 / libadwaita. ~/.config/gtk-4.0/gtk.css used to be a SYMLINK to
    Materia-dark, so every GTK4 app ignored the palette entirely and rendered
@@ -29,7 +48,10 @@ colors_file = os.path.expanduser('~/.cache/wal/colors.json')
 output_file = os.path.expanduser('~/.cache/wal/colors-qt6ct.conf')
 
 # Maximum relative luminance (0-1) allowed for app-chrome backgrounds.
-MAX_BG_LUMINANCE = 0.055
+# 0.07 tracks Spotify's hardcoded #121212 (7.1%). Going darker than this, as
+# the previous 0.055 did, made every themeable app visibly darker than the one
+# app that cannot be themed — solving the wrong half of the mismatch.
+MAX_BG_LUMINANCE = 0.07
 
 
 def _rgb(h):
@@ -67,12 +89,32 @@ with open(colors_file) as f:
 
 co = c['colors']
 sp = c['special']
-bg     = co['color0']
-bg2    = co['color8']
+
+
+def _mix(h, amount):
+    """Lift a color toward white by a flat per-channel amount, keeping hue."""
+    r, g, b = _rgb(h)
+    return _hex(r + amount, g + amount, b + amount)
+
+
+# --- THE canonical surface ramp -------------------------------------------
+# Every toolkit below derives its backgrounds from these and nothing else.
+# Do not reintroduce co['color0'] or co['color8'] as a background anywhere:
+# those are ANSI palette slots, not surfaces, and carry no darkness guarantee.
+APP_BG     = clamp_dark(sp['background'])   # windows, sidebars, canvas
+APP_VIEW   = _mix(APP_BG, 6)                # list/content areas
+APP_CARD   = _mix(APP_BG, 10)               # cards, popovers, buttons
+APP_HEADER = _mix(APP_BG, 14)               # headerbars, dialogs, toolbars
+APP_HOVER  = _mix(APP_BG, 20)               # hover / pressed states
+
 fg     = co['color7']
 fg2    = co['color15']
 accent = co['color4']
 accent2= co['color5']
+
+# Kept as local aliases so the qt6ct palette() call below stays readable.
+bg     = APP_BG
+bg2    = APP_HEADER
 
 # --- qt6ct color scheme ---
 def palette(text, btn, light, midlight, dark, mid, txt, bright, btntxt,
@@ -90,14 +132,9 @@ with open(output_file, 'w') as f:
     f.write(f"[ColorScheme]\nactive_colors={active}\ninactive_colors={inactive}\ndisabled_colors={disabled}\n")
 
 # --- Patch Kvantum LayanDark GeneralColors with pywal colors ---
-def lighten(h, amount):
-    h = h.lstrip('#')
-    r, g, b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
-    return '#{:02x}{:02x}{:02x}'.format(
-        min(255, r+amount), min(255, g+amount), min(255, b+amount))
+lighten = _mix   # same operation; kept under both names for the table below
 
-# App-chrome background: clamped so it never comes out washed-out grey.
-raw_bg  = clamp_dark(sp['background'])
+raw_bg  = APP_BG
 raw_fg  = sp['foreground']
 raw_c2  = co['color2']
 raw_c4  = co['color4']
@@ -141,21 +178,16 @@ with open(kvantum_cfg, 'w') as f:
 # --- GTK CSS for Thunar and other GTK apps ---
 gtk_css_path = os.path.expanduser('~/.config/gtk-3.0/gtk.css')
 
-BG  = clamp_dark(sp['background'])   # clamped: app chrome, not the wallpaper
+BG  = APP_BG
 FG  = sp['foreground']
 C1  = co['color1']   # muted accent
 C2  = co['color2']   # selection bg
 C4  = co['color4']   # focus/active
 C8  = co['color8']   # unfocused fg
 
-# Surfaces layered above the base background, derived so they stay in-hue.
-def _mix(h, amount):
-    r, g, b = _rgb(h)
-    return _hex(r + amount, g + amount, b + amount)
-
-BG_VIEW   = _mix(BG, 6)    # list/content areas
-BG_CARD   = _mix(BG, 10)   # cards, popovers
-BG_HEADER = _mix(BG, 14)   # headerbars, dialogs
+BG_VIEW   = APP_VIEW
+BG_CARD   = APP_CARD
+BG_HEADER = APP_HEADER
 
 gtk_css = f"""/* pywal colors — auto-generated, do not edit */
 @define-color theme_bg_color {BG};
@@ -263,6 +295,59 @@ if os.path.islink(gtk4_css_path):
     os.unlink(gtk4_css_path)
 with open(gtk4_css_path, 'w') as f:
     f.write(gtk4_css)
+
+# --- Shared surfaces for the Firefox start page ---------------------------
+# The start page (~/.config/firefox/home, served on 127.0.0.1:8080) used to
+# read --background straight out of colors.css, so it tracked the RAW wallpaper
+# background while every native app tracked the clamped one. Exporting the ramp
+# lets it use the identical values.
+surfaces_css = f"""/* Canonical app surfaces — auto-generated by ~/.config/wal/postrun.
+   Use these, not --background, for anything that should match native apps. */
+:root {{
+    --app-bg: {APP_BG};
+    --app-view: {APP_VIEW};
+    --app-card: {APP_CARD};
+    --app-header: {APP_HEADER};
+    --app-hover: {APP_HOVER};
+    --app-fg: {FG};
+    --app-border: {C4};
+}}
+"""
+with open(os.path.expanduser('~/.cache/wal/surfaces.css'), 'w') as f:
+    f.write(surfaces_css)
+
+# --- Hand pywalfox a dark background --------------------------------------
+# pywalfox (fetcher.py) reads ONLY colors.colorN from colors.json — it never
+# looks at special.background. So color0 alone decides Firefox's chrome.
+#
+# color0 is the ANSI black SLOT, which wallust does not guarantee is dark; on
+# this palette it came out #423A42 (23.6% luminance), which is why Firefox
+# chrome was a washed-out purple next to a near-black Spotify.
+#
+# Anchor it at APP_BG, not APP_HEADER. The addon does not use color0 flat: it
+# SCALES it up by ~2.86x to make the lighter chrome surfaces (URL bar field,
+# tab strip). Measured from a live screenshot histogram:
+#
+#     color0 #241e24 (APP_HEADER) -> derived #675667, 35.6% luminance
+#     color0 #161016 (APP_BG)     -> derived #3e2d3e, 19.5% luminance
+#
+# Feeding it an already-raised surface therefore gets lifted twice. APP_BG is
+# the correct anchor: the toolbar lands on the shared background, and the one
+# derived shade above it stays a plausible raised surface instead of a slab of
+# mid-grey.
+#
+# special.background is rewritten too, not for pywalfox but to keep colors.json
+# internally consistent with the ramp for anything else that reads it.
+#
+# Safe to rewrite: colors.json is regenerated by wallust from a template on
+# every run, and the only consumers are this script and pywalfox. The terminal
+# reads colors-kitty.conf instead, so ANSI black is untouched there.
+c['special']['background'] = APP_BG
+c['colors']['color0'] = APP_BG
+c['_postrun'] = 'background and color0 replaced with the canonical surface ramp'
+
+with open(colors_file, 'w') as f:
+    json.dump(c, f, indent=4)
 
 # Reload GTK settings so running apps pick up new colors
 os.system('pkill -HUP gsd-xsettings 2>/dev/null; xsettingsd -c /dev/null 2>/dev/null &')

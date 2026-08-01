@@ -27,17 +27,16 @@
 
   // Spacious: one floating pill per module. There is plenty of horizontal
   // room on 3440px, so density is not the goal — the styling carries it.
-  // Variable-width modules (mpris, taskbar) live at the END of modules-left so
-  // they grow rightward into empty space. Putting them in modules-center would
-  // re-center the whole group every time a title changed, making the workspace
+  // mpris is the only variable-width module left, and it sits at the END of
+  // modules-left so it grows rightward into empty space. In modules-center it
+  // would re-center the group on every track change, making the workspace
   // numbers drift under the cursor.
   "modules-left": [
     "custom/distro",
     "custom/hardware",
     "disk",
     "pulseaudio",
-    "mpris",
-    "wlr/taskbar"
+    "mpris"
   ],
   "modules-center": [
     "hyprland/workspaces"
@@ -48,9 +47,8 @@
     "custom/notification",
     "custom/cliphist",
     "custom/weather",
-    "network",
+    "custom/network",
     "custom/network-bluetooth",
-    "tray",
     "clock"
   ],
 
@@ -156,24 +154,10 @@
     "tooltip-format": "{used} used of {total}  ({free} free)"
   },
 
-  // Running windows, as in the reference shots. Icons only — titles would
-  // reintroduce the variable-width problem this layout is arranged to avoid.
-  "wlr/taskbar": {
-    "format": "{icon}",
-    "icon-size": 19,
-    "spacing": 4,
-    "tooltip-format": "{title}",
-    "on-click": "activate",
-    "on-click-middle": "close",
-    "ignore-list": ["waybar", "rofi"]
-  },
-
-  // System tray. The old style.css styled #tray but no tray module was ever
-  // declared in this config, so tray icons never appeared at all.
-  "tray": {
-    "icon-size": 18,
-    "spacing": 10
-  },
+  // No wlr/taskbar and no tray. The taskbar duplicated what the workspace
+  // numbers and the windows themselves already show, and the tray existed
+  // only to surface a Telegram icon that was never wanted. Removing the tray
+  // means background apps have no bar presence at all — which is the intent.
 
   "mpris": {
     "format": "󰝚 {artist} - {title}",
@@ -201,17 +185,18 @@
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   },
 
-  "network": {
-    "interface": "enp7s0",
-    "interval": 2,
-    // The ">" spec is waybar's own: its bandwidth formatter right-aligns the
-    // value into a constant-width field (widest unit + widest number). Without
-    // it the module resized on every tick as "4.4kB/s" became "183.0B/s",
-    // shoving every module to its left. Monospace font + fixed field = the
-    // pill never changes width.
-    "format-ethernet": "󰇚 {bandwidthDownBytes:>}  󰕒 {bandwidthUpBytes:>}",
-    "tooltip-format-ethernet": "{ifname}\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
-    "format-disconnected": "󰈂 offline",
-    "tooltip-format-disconnected": "No connection"
+  // Traffic as a sparkline rather than digits. A numeric down/up readout was
+  // a lot of glyphs for "is the network busy", and the figures churned every
+  // tick even once the width was pinned.
+  //
+  // Continuous script: no "interval" key on purpose. waybar re-execs interval
+  // scripts each tick, which would mean writing 14 samples of history to disk
+  // and reading them back every second; this keeps history in memory instead.
+  // restart-interval revives it if the process ever exits.
+  "custom/network": {
+    "exec": "~/.config/waybar/scripts/net-sparkline.py enp7s0",
+    "return-type": "json",
+    "restart-interval": 5,
+    "on-click": "kitty --hold -e sh -c 'ip -br addr; echo; ss -tunp'"
   }
 }
