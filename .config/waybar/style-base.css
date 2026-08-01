@@ -59,13 +59,13 @@ window#waybar {
 #custom-weather,
 #custom-network-bluetooth,
 #custom-cliphist,
-#custom-wallpaper,
+#custom-updates,
+#custom-notification,
+#disk,
 #network,
 #pulseaudio,
 #mpris,
 #clock,
-#custom-power,
-#idle_inhibitor,
 #privacy,
 #tray,
 #workspaces {
@@ -139,12 +139,20 @@ window#waybar {
   box-shadow: 0 0 14px alpha(@color4, 0.24);
 }
 
+/* ── Disk ────────────────────────────────────────────────────────────────── */
+#disk {
+  color: @color6;
+  letter-spacing: 0.4px;
+  border-color: alpha(@color6, 0.34);
+  text-shadow: 0 0 6px alpha(@color6, 0.45);
+}
+
 /* ── Utility cluster — square-ish icon buttons ───────────────────────────── */
 /* Narrower padding so these read as a group of controls rather than as
    readouts, without breaking the shared plate geometry. */
 #custom-cliphist,
-#custom-wallpaper,
-#idle_inhibitor,
+#custom-notification,
+#custom-updates,
 #privacy {
   font-size: 17px;
   padding: 0 12px;
@@ -154,8 +162,8 @@ window#waybar {
 }
 
 #custom-cliphist:hover,
-#custom-wallpaper:hover,
-#idle_inhibitor:hover {
+#custom-notification:hover,
+#custom-updates:hover {
   color: @color4;
   background-color: alpha(@background, 0.88);
   border-color: alpha(@color4, 0.55);
@@ -163,12 +171,82 @@ window#waybar {
   box-shadow: 0 0 16px alpha(@color4, 0.34);
 }
 
-/* Inhibitor ON is a state worth seeing from across the room. */
-#idle_inhibitor.activated {
+/* ── Updates ─────────────────────────────────────────────────────────────── */
+/* Pending is a nudge, not an alarm. The separation from its neighbours comes
+   from brightness, not hue — @color3 is whatever the wallpaper yields and is
+   as likely to be blue as amber, so the dim/lit contrast against the quiet
+   utility icons is what has to carry it. Up-to-date recedes almost fully. */
+#custom-updates.pending {
   color: @color3;
-  border-color: alpha(@color3, 0.65);
-  text-shadow: 0 0 8px @color3, 0 0 16px alpha(@color3, 0.70);
-  box-shadow: 0 0 16px alpha(@color3, 0.35);
+  letter-spacing: 0.5px;
+  border-color: alpha(@color3, 0.55);
+  text-shadow: 0 0 8px alpha(@color3, 0.70);
+  box-shadow: 0 0 13px alpha(@color3, 0.25);
+}
+
+#custom-updates.current {
+  color: alpha(@color2, 0.65);
+  border-color: alpha(@color2, 0.25);
+  text-shadow: none;
+}
+
+/* ── Notifications ───────────────────────────────────────────────────────── */
+#custom-notification.unread {
+  color: @color4;
+  border-color: alpha(@color4, 0.55);
+  text-shadow: 0 0 8px alpha(@color4, 0.75);
+  box-shadow: 0 0 13px alpha(@color4, 0.25);
+}
+
+#custom-notification.dnd {
+  color: alpha(@foreground, 0.40);
+  border-color: alpha(@color8, 0.30);
+  text-shadow: none;
+}
+
+#custom-notification.none {
+  color: alpha(@foreground, 0.45);
+  border-color: alpha(@color8, 0.26);
+  text-shadow: none;
+}
+
+/* ── Taskbar ─────────────────────────────────────────────────────────────── */
+/* Deliberately NOT on the shared module plate. waybar's wlr/taskbar exposes
+   only button.{active,minimized,maximized,fullscreen} — there is no "empty"
+   class to hook (checked in waybar-wlr-taskbar(5)), so a plate would sit on
+   the bar as an empty bordered stub on any workspace with no windows. Letting
+   the icons float means the module simply disappears when there is nothing to
+   show, which is also how the reference shots handle it. */
+#taskbar {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  margin: 0 3px;
+  padding: 0;
+}
+
+#taskbar button {
+  padding: 0 7px;
+  margin: 4px 2px;
+  border-radius: 3px 11px 3px 11px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.20s ease;
+}
+
+#taskbar button.active {
+  background-color: alpha(@color4, 0.22);
+  box-shadow: inset 0 0 0 1px alpha(@color4, 0.50);
+}
+
+#taskbar button:hover {
+  background-color: alpha(@color4, 0.16);
+}
+
+/* Minimised windows dim rather than vanish. */
+#taskbar button.minimized {
+  -gtk-icon-effect: dim;
 }
 
 /* Privacy only appears while something is actually capturing — make it loud. */
@@ -233,26 +311,15 @@ window#waybar {
   background-color: @color4;
 }
 
-/* ── Power ───────────────────────────────────────────────────────────────── */
-#custom-power {
-  color: @color1;
-  font-size: 17px;
-  padding: 0 16px;
-  border-color: alpha(@color1, 0.48);
-  text-shadow: 0 0 7px alpha(@color1, 0.70);
-}
-
-#custom-power:hover {
-  color: @background;
-  background-color: @color1;
-  text-shadow: none;
-  box-shadow: 0 0 16px alpha(@color1, 0.75);
-}
+/* No #custom-power block: power lives on SUPER+X and SUPER+SHIFT+{P,R,L,S}.
+   A bar button for it duplicated a keybind that already gets used, and put a
+   one-click shutdown inside mouse range of the clock. */
 
 /* ── Hover: lift the bloom rather than change the fill ───────────────────── */
 #mpris:hover,
 #pulseaudio:hover,
 #clock:hover,
+#disk:hover,
 #custom-hardware:hover,
 #network:hover,
 #custom-weather:hover,

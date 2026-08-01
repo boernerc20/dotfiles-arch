@@ -27,26 +27,31 @@
 
   // Spacious: one floating pill per module. There is plenty of horizontal
   // room on 3440px, so density is not the goal — the styling carries it.
+  // Variable-width modules (mpris, taskbar) live at the END of modules-left so
+  // they grow rightward into empty space. Putting them in modules-center would
+  // re-center the whole group every time a title changed, making the workspace
+  // numbers drift under the cursor.
   "modules-left": [
     "custom/distro",
     "custom/hardware",
+    "disk",
     "pulseaudio",
-    "mpris"
+    "mpris",
+    "wlr/taskbar"
   ],
   "modules-center": [
     "hyprland/workspaces"
   ],
   "modules-right": [
     "privacy",
-    "idle_inhibitor",
+    "custom/updates",
+    "custom/notification",
     "custom/cliphist",
-    "custom/wallpaper",
     "custom/weather",
     "network",
     "custom/network-bluetooth",
     "tray",
-    "clock",
-    "custom/power"
+    "clock"
   ],
 
   // ── Workspaces ───────────────────────────────────────────────────────────
@@ -100,17 +105,8 @@
   },
 
   // ── Utility cluster (HyDE-inspired) ──────────────────────────────────────
-  // Screen-lock inhibitor: click to keep the display awake during a long
-  // build, a film, or a remote session.
-  "idle_inhibitor": {
-    "format": "{icon}",
-    "format-icons": {
-      "activated": "󰅶",
-      "deactivated": "󰾪"
-    },
-    "tooltip-format-activated": "Idle inhibited — display will stay awake",
-    "tooltip-format-deactivated": "Idle normal"
-  },
+  // No idle_inhibitor here on purpose: this machine does not auto-sleep or
+  // lock, so a toggle for it would be a control with nothing to control.
 
   // Shows an indicator whenever something is capturing screen, mic or camera.
   "privacy": {
@@ -130,18 +126,46 @@
     "on-click": "sleep 0.1 && cliphist list | rofi -dmenu -config ~/.config/rofi/colors-rofi.rasi -p 'clipboard' | cliphist decode | wl-copy"
   },
 
-  "custom/wallpaper": {
-    "format": "󰸉",
-    "tooltip": false,
-    "on-click": "~/.local/bin/wallpaper-picker",
-    "on-click-right": "~/.local/bin/wallpaper-picker --random"
+  // Wallpaper stays on SUPER+W only, and power on SUPER+X / SUPER+SHIFT+*.
+  // Both were bar buttons duplicating a keybind that already gets used.
+
+  // Pending package updates, official repos + AUR. Worth a widget because
+  // updates here are deliberately manual (yay -Syu), so nothing else
+  // surfaces that they are waiting.
+  "custom/updates": {
+    "exec": "~/.config/waybar/scripts/updates.sh",
+    "return-type": "json",
+    "interval": 1800,
+    "on-click": "kitty --hold -e yay -Syu"
   },
 
-  // Power menu — same target as SUPER+X so the bar and the keybind agree.
-  "custom/power": {
-    "format": "⏻",
-    "tooltip": false,
-    "on-click": "pkill wlogout || wlogout"
+  // mako do-not-disturb toggle plus unread count.
+  "custom/notification": {
+    "exec": "~/.config/waybar/scripts/notification.sh",
+    "return-type": "json",
+    "interval": 3,
+    "on-click": "makoctl mode -t do-not-disturb",
+    "on-click-right": "makoctl dismiss --all"
+  },
+
+  // Root filesystem free space.
+  "disk": {
+    "path": "/",
+    "interval": 120,
+    "format": "󰋊 {percentage_used}%",
+    "tooltip-format": "{used} used of {total}  ({free} free)"
+  },
+
+  // Running windows, as in the reference shots. Icons only — titles would
+  // reintroduce the variable-width problem this layout is arranged to avoid.
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 19,
+    "spacing": 4,
+    "tooltip-format": "{title}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "ignore-list": ["waybar", "rofi"]
   },
 
   // System tray. The old style.css styled #tray but no tray module was ever
@@ -180,7 +204,12 @@
   "network": {
     "interface": "enp7s0",
     "interval": 2,
-    "format-ethernet": "󰇚 {bandwidthDownBytes}  󰕒 {bandwidthUpBytes}",
+    // The ">" spec is waybar's own: its bandwidth formatter right-aligns the
+    // value into a constant-width field (widest unit + widest number). Without
+    // it the module resized on every tick as "4.4kB/s" became "183.0B/s",
+    // shoving every module to its left. Monospace font + fixed field = the
+    // pill never changes width.
+    "format-ethernet": "󰇚 {bandwidthDownBytes:>}  󰕒 {bandwidthUpBytes:>}",
     "tooltip-format-ethernet": "{ifname}\nDown: {bandwidthDownBytes}\nUp: {bandwidthUpBytes}",
     "format-disconnected": "󰈂 offline",
     "tooltip-format-disconnected": "No connection"
