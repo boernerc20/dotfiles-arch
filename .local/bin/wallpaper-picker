@@ -76,8 +76,22 @@ main() {
         current_real="$(readlink -f "$CURRENT_LINK")"
     fi
 
+    # Picker-only theme overrides, layered on top of the shared wallust rasi.
+    #
+    # The shared theme is tuned for the app menu: 8 lines and 32px icons, which
+    # is right for launcher glyphs and useless for wallpapers — a 32px thumbnail
+    # of a 3440x1440 image is an unreadable smudge, so the list was effectively
+    # filename-only. 12 lines also puts most of the ~31 wallpapers within one
+    # scroll instead of showing barely a quarter of them.
+    #
+    # These go through -theme-str rather than into the template because the same
+    # rasi drives SUPER+D (drun) and SUPER+V (cliphist), where 96px icons would
+    # be absurd. Overriding here keeps one themed rasi and one exception to it.
+    local theme_str='listview { lines: 12; } element-icon { size: 96px; }'
+
     local selection
-    selection="$(generate_menu "$wallpapers" "$current_real" | rofi -dmenu -show-icons -config "$ROFI_CONFIG" -p "wallpaper")"
+    selection="$(generate_menu "$wallpapers" "$current_real" \
+        | rofi -dmenu -show-icons -config "$ROFI_CONFIG" -theme-str "$theme_str" -p "wallpaper")"
 
     if [[ -z "$selection" ]]; then
         exit 0

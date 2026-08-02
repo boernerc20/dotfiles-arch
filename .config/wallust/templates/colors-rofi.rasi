@@ -121,13 +121,20 @@ button selected {
 }
 
 /*****----- Listview -----*****/
+/* scrollbar was `false` with lines: 8. Any list longer than 8 entries — the
+   app menu, clipboard history, and the ~31 wallpapers — was silently cut off
+   with NO on-screen indication that anything existed below the fold. A new
+   wallpaper landing at sort position 9 simply looked like it had not been
+   picked up at all. The list was always complete; you just could not see it.
+   `dynamic: true` means short lists still shrink to fit, so the scrollbar
+   only appears when there is genuinely something to scroll to. */
 listview {
     enabled:                    true;
     columns:                    1;
     lines:                      8;
     cycle:                      true;
     dynamic:                    true;
-    scrollbar:                  false;
+    scrollbar:                  true;
     layout:                     vertical;
     alternate-rows:             false;
     reverse:                    false;
@@ -137,6 +144,14 @@ listview {
     background-color:           transparent;
     text-color:                 @foreground;
     cursor:                     "default";
+}
+
+scrollbar {
+    width:                      4px;
+    border-radius:              4px;
+    background-color:           @background-alt;
+    handle-color:               {{color4}};
+    handle-width:               4px;
 }
 
 /*****----- Elements -----*****/
