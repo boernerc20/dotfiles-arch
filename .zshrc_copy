@@ -53,7 +53,7 @@ alias cmds='micro ~/projects/linux/03-configuration/cmds'
 alias cui='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd'
 alias cui-low='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd --lowvram'
 alias gotop='gotop --nvidia -s -a -p'
-alias weather='wego -owm-api-key 00e12f6a2d60e4a5592520ac1f833f37 -l "Falls+Church" -d 1 -u imperial'
+alias weather='wego -owm-api-key "$OPENWEATHER_API_KEY" -l "Falls+Church" -d 1 -u imperial'
 alias mp4-gif='/home/chris/projects/linux/04-utilities/mp4-to-gif'
 alias rpi-imager='sudo -E rpi-imager'
 alias ai='cd /mnt/ai/'
@@ -126,7 +126,9 @@ export PATH=$PATH:/home/chris/.spicetify
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-export HOME_ASSISTANT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmOTE1MzEyMTVjZDQ0ZGMyYTg1YmUwODExZGQ1MmYwZCIsImlhdCI6MTc2NjYwOTgyNiwiZXhwIjoyMDgxOTY5ODI2fQ._v7Nix4GY5_qEyOhDiw6ifogkfmgVBC4TwuyCLwg2RE"
+# Secrets live in ~/.config/shell/secrets.env (gitignored, mode 600).
+# Never hardcode them here — this file is committed to a PUBLIC repo.
+[[ -f ~/.config/shell/secrets.env ]] && source ~/.config/shell/secrets.env
 export TERM=xterm-256color
 # user npm global binaries
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"

@@ -97,6 +97,35 @@ def check_empty_icons(path):
     return problems
 
 
+# A glyph does not always vanish outright — it can DEGRADE. volume.sh shipped
+# `icon="? "` where U+F028 used to be, so the high-volume state rendered as
+# "? 100%" on the bar. Every check above passed it: the file is valid, the icon
+# is a non-empty string, and "?" is a real glyph present in the font. Coverage
+# checking can only ever prove a codepoint exists, never that it is the one you
+# meant. So look at it from the other side: an assignment that is named like an
+# icon but holds only ASCII cannot be right, because an icon by definition is
+# not ASCII.
+ICON_ASSIGN = re.compile(r'\bicon\s*=\s*"([^"]*)"')
+
+
+def check_degraded_icons(path):
+    """Catch icons that decayed into ASCII rather than disappearing."""
+    problems = []
+    if path.suffix == ".jsonc":
+        return problems
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if line.lstrip().startswith("#"):
+            continue
+        for value in ICON_ASSIGN.findall(line):
+            stripped = value.strip()
+            if stripped and all(ord(c) < 0x2000 for c in stripped):
+                problems.append(
+                    f"{path.name}:{lineno}: icon={value!r} contains no glyph "
+                    f"— looks like a stripped codepoint"
+                )
+    return problems
+
+
 def main():
     if not FONT.exists():
         sys.exit(f"font not found: {FONT}")
@@ -110,6 +139,7 @@ def main():
         if not src.exists():
             continue
         empties += check_empty_icons(src)
+        empties += check_degraded_icons(src)
         text = src.read_text(encoding="utf-8")
         for ch in text:
             if ord(ch) > 0x2000 and ch not in IGNORE:
