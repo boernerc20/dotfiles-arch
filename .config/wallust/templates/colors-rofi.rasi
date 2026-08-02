@@ -135,6 +135,11 @@ listview {
     cycle:                      true;
     dynamic:                    true;
     scrollbar:                  true;
+    /* rofi's built-in default puts a 2px WHITE DASHED rule above the first
+       row. The theme never asked for it, it is the one hardcoded colour in an
+       otherwise fully palette-driven file, and it reads as a rendering fault
+       rather than as a divider. Nothing inherits a border here, so 0 is safe. */
+    border:                     0;
     layout:                     vertical;
     alternate-rows:             false;
     reverse:                    false;
@@ -204,6 +209,10 @@ element.alternate.active {
 /*****----- Message & Error -----*****/
 message {
     background-color:           transparent;
+    /* Same inherited 2px white dash as listview had. This one only surfaces
+       when rofi actually has a message to show, so it is rarely seen — but it
+       is the same defect and the same one-line fix. */
+    border:                     0;
 }
 
 textbox {

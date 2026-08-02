@@ -78,16 +78,22 @@ main() {
 
     # Picker-only theme overrides, layered on top of the shared wallust rasi.
     #
-    # The shared theme is tuned for the app menu: 8 lines and 32px icons, which
-    # is right for launcher glyphs and useless for wallpapers — a 32px thumbnail
-    # of a 3440x1440 image is an unreadable smudge, so the list was effectively
-    # filename-only. 12 lines also puts most of the ~31 wallpapers within one
-    # scroll instead of showing barely a quarter of them.
+    # A 32px thumbnail of a 3440x1440 wallpaper is an unreadable smudge, so the
+    # shared theme's icon size makes -show-icons pointless here. But trading
+    # rows for pixels has to be done as a PAIR, because rofi's row pitch is
+    #     icon_size + 16 (element padding x2) + 10 (listview spacing)
+    # so the icon size drives the window height directly. 12 rows at 96px is a
+    # 1454px-tall panel — taller than this 1440px display, which clipped the
+    # bottom entry off the screen entirely.
+    #
+    # 6 rows at 56px keeps the panel at ~531px against the app menu's ~500px:
+    # near-identical height, thumbnails 75% larger, and with the scrollbar now
+    # on there is a visible cue that the list continues.
     #
     # These go through -theme-str rather than into the template because the same
-    # rasi drives SUPER+D (drun) and SUPER+V (cliphist), where 96px icons would
-    # be absurd. Overriding here keeps one themed rasi and one exception to it.
-    local theme_str='listview { lines: 12; } element-icon { size: 96px; }'
+    # rasi drives SUPER+D (drun) and SUPER+V (cliphist), where 56px icons would
+    # be oversized. One themed rasi, one documented exception to it.
+    local theme_str='listview { lines: 6; } element-icon { size: 56px; }'
 
     local selection
     selection="$(generate_menu "$wallpapers" "$current_real" \

@@ -43,12 +43,23 @@ hyprctl hyprpaper wallpaper ",$WP"
 # 4) Set waybar
 cat ~/.cache/wal/colors-waybar.css ~/.config/waybar/style-base.css > ~/.config/waybar/style.css
 # Restart waybar to apply new colors (kill + restart avoids reload segfaults)
+#
+# `setsid`, not a bare `&` + `disown`. disown only removes the job from THIS
+# shell's job table — it does not change the process group, so the new waybar
+# still shares one with whatever invoked this script. Anything that signals
+# that group (a terminal closing, a `timeout` firing, a killed parent) takes
+# waybar down with it, leaving the session with no bar and nothing in the
+# journal to explain it. Observed exactly that on 2026-08-02 running this from
+# a shell that was later terminated.
+#
+# From a Hyprland keybind the parent exits immediately, so the old form usually
+# worked — which is what made this look fine for so long. setsid makes waybar
+# its own session leader, reparented to init, and immune to all of it.
 if pgrep -x waybar > /dev/null; then
     killall -q waybar
     # Brief wait to ensure clean shutdown
     sleep 0.3
-    waybar &>/dev/null &
-    disown
+    setsid waybar >/dev/null 2>&1 < /dev/null &
 fi
 
 # 4a) Reload kitty.
