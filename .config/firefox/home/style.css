@@ -1,164 +1,372 @@
-/* colors.css and surfaces.css are pulled in as <link> elements by index.html,
-   in that order, so the page's cache-buster can refresh them on a wallpaper
-   change. They are deliberately NOT @import-ed here.
+/* ===========================================================================
+   Firefox start page — cyberpunk, matched to the Hyprland desktop
+   ---------------------------------------------------------------------------
+   colors.css and surfaces.css are <link>ed by index.html, in that order, and
+   are symlinks into ~/.cache/wal/. Every colour here comes from them; there is
+   no hardcoded hex anywhere except pure black/white used for shadow alpha.
 
-   Use --app-* for anything that should match native apps: colors.css alone
-   gave this page the raw wallpaper background, which sat lighter than every
-   GTK/Qt window and made the browser look like a different theme. */
+   PALETTE ROLES — identical to waybar/style-base.css and the hyprlock template,
+   so the browser reads as part of the same system rather than a lookalike:
+       --app-bg      near-black plate fill   (clamped by ~/.config/wal/postrun)
+       --color4      primary accent          (clock, active borders, focus ring)
+       --color6      secondary readouts      (links, section icons)
+       --color8      recessed / muted text
+       --foreground  primary text
+       --color1      alert                   (unused here, kept for parity)
+
+   Use --app-* rather than --background for surfaces. colors.css alone gives the
+   raw unclamped palette, which sits lighter than every GTK/Qt window and made
+   the browser look like a different theme.
+
+   GEOMETRY — the desktop's "plating" cue is a clipped diagonal corner,
+   4px / 14px, with a 1px accent edge, an inset top highlight so the rim catches
+   light, and a small OFFSET drop shadow. Offset reads as depth; a symmetric
+   blur reads as a halo, and a halo goes square when the radius is this tight.
+   =========================================================================== */
 
 :root {
-    --color-bg: var(--app-bg);
-    --color-fg: var(--color12);
-    --color-link: var(--color12);
-    --color-link-visited: var(--color12);
-    --color-link-hover: var(--color10);
-    --clock-font: 'CartographCF Nerd Font';
-    --text-font: 'CartographCF Nerd Font';
+  /* The desktop is entirely JetBrainsMono Nerd Font. The previous value here
+     was 'CartographCF Nerd Font', which is NOT INSTALLED on this machine —
+     `fc-list | grep -i cartograph` returns nothing — so the page had been
+     silently falling back to a generic monospace and never matched anything. */
+  --font: "JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, monospace;
+
+  --plate: color-mix(in srgb, var(--app-bg) 62%, transparent);
+  --edge: color-mix(in srgb, var(--color4) 45%, transparent);
+  --edge-hot: color-mix(in srgb, var(--color4) 85%, transparent);
+  --radius: 4px 14px 4px 14px;
+
+  --glow-accent: 0 0 9px color-mix(in srgb, var(--color4) 80%, transparent);
+  --glow-soft: 0 0 6px color-mix(in srgb, var(--color6) 45%, transparent);
+
+  --plate-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent),
+    0 2px 5px color-mix(in srgb, #000 38%, transparent);
 }
 
-html {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: center;
-    align-content: center;
-    align-items: center;
-    height: 100vh;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-    background: var(--color-bg);
-    color: var(--color-fg);
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  background: var(--app-bg);
+  color: var(--foreground);
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* ── Backdrop ──────────────────────────────────────────────────────────────
+   --wallpaper is set by wallust in colors.css and always points at the CURRENT
+   wallpaper, so this never goes stale. Treated exactly like the hyprlock
+   background: blurred and dimmed hard, so it reads as a lit surface behind
+   instrumentation rather than as a picture with text on top. Previously the
+   page used the wallpaper at full brightness, which is why it looked washed
+   out and lighter than every native window. */
+.backdrop {
+  position: fixed;
+  inset: -40px;                     /* overscan so the blur has no soft edge */
+
+  /* NOT var(--wallpaper). That variable holds an absolute FILESYSTEM path
+     (/home/chris/pics/wallpapers/…), and over http://localhost a leading slash
+     resolves against the server root — so the browser asked for
+     localhost:8080/home/chris/... and got a 404 every single time. The backdrop
+     could never load, which is the whole reason this page never showed the
+     current wallpaper.
+     /wallpaper is a route in serve.py that resolves ~/.current_wallpaper at
+     request time, so it follows Super+W with no restart. */
+  background-image: url("wallpaper");
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) brightness(0.38) saturate(1.25);
+  z-index: -2;
+}
+
+/* A dark vignette + wash on top of the image. Two jobs: it guarantees text
+   contrast on a pale wallpaper, and it tints everything toward the palette so
+   a wallpaper with an off-palette cast cannot fight the accent colour. */
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 42%,
+      transparent 0%,
+      color-mix(in srgb, var(--app-bg) 55%, transparent) 55%,
+      color-mix(in srgb, var(--app-bg) 88%, transparent) 100%),
+    linear-gradient(0deg,
+      color-mix(in srgb, var(--app-bg) 72%, transparent),
+      color-mix(in srgb, var(--app-bg) 72%, transparent));
+}
+
+/* Faint horizontal scanlines — the one purely decorative element. Kept at 3%
+   alpha and 3px pitch: enough to register as CRT texture at a glance, not
+   enough to interfere with reading 13px type. */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    color-mix(in srgb, #000 3%, transparent) 0px,
+    color-mix(in srgb, #000 3%, transparent) 1px,
+    transparent 1px,
+    transparent 3px);
+}
+
+.stage {
+  width: min(1100px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3vh 0;
+}
+
+/* ── HUD strip ─────────────────────────────────────────────────────────────
+   The waybar readout grammar, reused: a dim icon, a bright value, and U+2502
+   between fields. */
+.hud {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 3.2rem;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+}
+
+.hud-chip {
+  background: var(--plate);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--plate-shadow);
+  padding: 5px 14px;
+  color: var(--color6);
+  text-shadow: var(--glow-soft);
+  white-space: nowrap;
+}
+
+.dim { opacity: 0.72; }
+
+/* The bar binds an icon to its value with a size-scaled space rather than a
+   literal one, because a literal space is a full monospace cell and leaves the
+   icon floating. Same trick here, as a fixed-width inline element. */
+.gap { display: inline-block; width: 0.45em; }
+
+.sep {
+  opacity: 0.38;
+  margin: 0 0.55em;
+}
+
+/* ── Clock ─────────────────────────────────────────────────────────────── */
+.clockblock {
+  text-align: center;
+  margin-bottom: 2.6rem;
 }
 
 .time {
-    font-family: var(--clock-font);
-    font-weight: 900;
-    text-align: center;
-    font-size: 68px;
-    color: var(--color-fg);
+  font-size: clamp(48px, 8.5vw, 96px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color4);
+  text-shadow: var(--glow-accent);
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;   /* stop the layout shifting every minute */
 }
 
-@media (max-width: 768px) {
-    .time {
-        font-size: 42px;
-    }
+/* The lock screen's accent rule, same role: separates the clock from what is
+   below it without drawing a box. Wider than the text it divides, and faint —
+   a rule, not an underline. */
+.rule {
+  width: min(460px, 60vw);
+  height: 1px;
+  margin: 1.5rem auto 1.2rem;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--color4) 55%, transparent) 20%,
+    color-mix(in srgb, var(--color4) 55%, transparent) 80%,
+    transparent);
 }
 
-.title {
-    font-family: var(--text-font);
-    text-align: center;
-    margin: 0.5rem 0 2rem;
-    color: var(--color6);
-    font-size: 24px;
+.greeting {
+  font-size: 17px;
+  color: var(--color6);
+  letter-spacing: 0.6px;
+  text-shadow: var(--glow-soft);
 }
 
-.container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    justify-content: center;
-}
+.greeting #greeting { opacity: 0.72; }
 
-.category {
-    display: flex;
-    flex-direction: column;
-    width: 170px;
-}
-
-.bookmark {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: space-evenly;
-}
-
-.bookmarks {
-    display: flex;
-    flex-direction: column;
-    align-items: left;
-}
-
-li {
-    display: flex;
-    list-style-type: none;
-    font-family: var(--text-font);
-    font-size: 22px;
-    padding: 2px;
-    list-style-type: none;
-}
-
-a {
-    transition: 0.25s color;
-}
-
-a:link {
-    text-decoration: none;
-    color: var(--color-link);
-}
-
-a:visited {
-    color: var(--color-link-visited);
-}
-
-a:hover {
-    color: var(--color-link-hover);
-}
-
-/* ─── Container & positioning ─────────────────────────────────────────────── */
+/* ── Search ────────────────────────────────────────────────────────────── */
 .search {
-  width: 100%;
-  margin: 2rem 0;               /* space above & below */
+  position: relative;
+  width: min(560px, 88vw);
+  margin-bottom: 3rem;
   display: flex;
-  justify-content: center;      /* center on page */
+  align-items: center;
 }
 
-/* ─── The big, pill‑shaped input ───────────────────────────────────────────── */
+.search-icon,
+.search-hint {
+  position: absolute;
+  color: var(--color8);
+  pointer-events: none;
+  font-size: 15px;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+
+.search-icon { left: 16px; }
+.search-hint { right: 16px; opacity: 0.45; font-size: 13px; }
+
 .search-input {
-  width: 60%;                   /* adjust to taste */
-  max-width: 500px;
-  height: 2.5rem;               /* nice tall bar */
-  padding: 0 1rem 0 4rem;       /* room for an icon if you add one */
+  width: 100%;
+  height: 46px;
+  padding: 0 42px 0 44px;
+  font-family: var(--font);
+  font-size: 15px;
+  letter-spacing: 0.4px;
 
-  font-size: 1.0rem;            /* large text */
-  font-family: var(--text-font);
-  text-align: left;
-
-  /* A dark surface with an accent EDGE, not an accent fill. The comment that
-     used to sit here claimed --color2 was "mid-tone grey"; on this palette it
-     resolves to #CA4CBD at 43.5% luminance, so the search box rendered as a
-     slab of saturated magenta — by far the brightest thing on the desktop.
-     Accent belongs on the border and the focus ring. */
-  background-color: var(--app-card);
-  color: var(--app-fg);
-  border: 1px solid var(--app-border);
-  border-radius: 2rem;                   /* pill shape */
-
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);  /* subtle depth */
+  /* Accent on the EDGE, never as a fill. An earlier revision used --color2 as
+     the background on the theory that it was a mid grey; on this palette it
+     resolves to a saturated magenta, and the search box became the single
+     brightest object on the desktop. */
+  background: var(--plate);
+  color: var(--foreground);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--plate-shadow);
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.search-input:hover {
-  background-color: var(--app-hover);
-}
-
-.search-input:focus {
-  border-color: var(--color6);
-  box-shadow: 0 0 0 1px var(--color6), 0 2px 12px rgba(0,0,0,0.7);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .search-input::placeholder {
-  /* if you ever add placeholder text, keep it invisible */
-  color: transparent;
+  color: var(--color8);
+  opacity: 0.55;
+}
+
+.search-input:hover {
+  border-color: color-mix(in srgb, var(--color4) 60%, transparent);
+}
+
+.search-input:focus {
+  border-color: var(--edge-hot);
+  background: color-mix(in srgb, var(--app-bg) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent),
+    0 0 16px color-mix(in srgb, var(--color4) 34%, transparent);
+}
+
+.search:focus-within .search-icon {
+  color: var(--color4);
+  text-shadow: var(--glow-accent);
+}
+
+/* ── Bookmark plates ───────────────────────────────────────────────────── */
+.grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.plate {
+  background: var(--plate);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--plate-shadow);
+  padding: 16px 18px 14px;
+  transition: border-color 0.22s, box-shadow 0.22s, background-color 0.22s;
+}
+
+.plate:hover {
+  border-color: color-mix(in srgb, var(--color4) 65%, transparent);
+  background: color-mix(in srgb, var(--app-bg) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 9%, transparent),
+    0 0 18px color-mix(in srgb, var(--color4) 22%, transparent);
+}
+
+.plate-title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  color: var(--color4);
+  text-shadow: var(--glow-accent);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color4) 20%, transparent);
+}
+
+.plate ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plate li + li { margin-top: 2px; }
+
+.plate a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  margin: 0 -8px;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  color: var(--color6);
+  text-decoration: none;
+  border-radius: 3px 10px 3px 10px;
+  transition: color 0.18s, background-color 0.18s, text-shadow 0.18s;
+}
+
+.plate a .ico {
+  opacity: 0.72;
+  font-size: 15px;
+  width: 1.25em;
+  text-align: center;
+  transition: opacity 0.18s;
+}
+
+/* Hover lifts the item rather than the whole plate: a tinted fill plus full
+   -strength icon, matching how waybar's utility buttons respond. */
+.plate a:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--color4) 16%, transparent);
+  text-shadow: var(--glow-accent);
+}
+
+.plate a:hover .ico { opacity: 1; }
+
+.plate a:focus-visible {
+  outline: 1px solid var(--edge-hot);
+  outline-offset: 1px;
+}
+
+/* ── Narrow screens ────────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  .hud { margin-bottom: 2rem; font-size: 12px; }
+  .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .plate { padding: 13px 14px 11px; }
+  .clockblock { margin-bottom: 1.8rem; }
+  .rule { margin: 1.1rem auto 0.9rem; }
+}
+
+@media (max-width: 400px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* Someone who has asked for reduced motion still gets the design, just without
+   the transitions. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
 }
