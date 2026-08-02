@@ -113,9 +113,11 @@ bash ~/projects/dotfiles-arch/install.sh
 | Shell | Sets `zsh` as the default shell |
 | Dotfiles | Deploys all configs |
 | hyprland-local.conf | Creates the machine-local monitor/GPU override file |
-| secrets.env | Creates the gitignored secrets file from the template |
-| Initial palette | Runs `wal-hypr.sh` against the first wallpaper it finds |
+| Secrets | Creates `secrets.env` and `weather.env`, both empty and `0600` |
+| Initial palette | Runs `wal-hypr.sh` against the first wallpaper it finds, or tells you what to run if there are none |
 | Pywalfox | Installs the Firefox native connector |
+
+Re-running it is safe: existing `secrets.env`, `weather.env`, `hyprland-local.conf` and `.zshrc.local` are left untouched.
 
 ### After the install
 
@@ -134,17 +136,18 @@ hyprctl monitors                              # find the name
 nvim ~/.config/hypr/hyprland-local.conf       # e.g. monitor=DP-3, 3440x1440@120, 0x0, 1
 ```
 
-**3. Add your secrets.**
+**3. Add your secrets.** The install script creates both files empty and `0600`; you just fill them in.
 
 ```sh
-cp .config/shell/secrets.env.example ~/.config/shell/secrets.env
-chmod 600 ~/.config/shell/secrets.env
-nvim ~/.config/shell/secrets.env
+nvim ~/.config/shell/secrets.env     # OPENWEATHER_API_KEY, and anything else private
+nvim ~/.config/waybar/weather.env    # the SAME OpenWeatherMap key
 ```
 
-This holds the OpenWeatherMap key for the weather widget and anything else you don't want committed. **Never put a key in `.zshrc`** — that file is tracked.
+**Never put a key in `.zshrc`** — that file is tracked, and doing exactly that is how two live credentials sat in this public repo for four months.
 
-> The waybar weather module reads its own copy from `~/.config/waybar/weather.env`. If you rotate the key, update **both** files.
+> Two files, one key. waybar is launched by Hyprland rather than from a login shell, so it never sees the shell's environment and needs its own copy. Rotating means editing **both**.
+
+> A freshly generated OpenWeatherMap key returns `401 Invalid API key` for up to a couple of hours before it activates. That is normal — the weather module shows its alert glyph until then.
 
 **4. Reboot**, log in, and select Hyprland.
 

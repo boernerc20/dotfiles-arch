@@ -168,7 +168,10 @@ PKGS=(
     wallust                  # palette generator (replaced pywal)
     bibata-cursor-theme
     zsh-theme-powerlevel10k-git
-    pywalfox-native
+    # python-pywalfox, NOT pywalfox-native — the latter does not exist in the
+    # AUR and made yay fail on this list. This is the package that actually
+    # provides /usr/bin/pywalfox, used by the "Setting up pywalfox" step below.
+    python-pywalfox
     tty-clock
     pipes.sh
 )
@@ -195,8 +198,14 @@ if [[ "$IS_LAPTOP" == "yes" ]]; then
     sudo systemctl enable tlp
 fi
 
-# Display manager — try sddm, fall back to greetd
-if systemctl enable sddm 2>/dev/null; then
+# Display manager — try sddm, fall back to greetd.
+#
+# NOTE THE sudo. Without it `systemctl enable` fails with "Access denied ...
+# requires interactive authentication", and because stderr is sent to /dev/null
+# that failure was invisible: EVERY fresh install silently took the greetd
+# fallback and never installed sddm at all. The fallback is meant for the case
+# where sddm genuinely will not enable, not for a missing privilege.
+if sudo systemctl enable sddm 2>/dev/null; then
     success "sddm display manager enabled"
 else
     warn "sddm failed, installing greetd as fallback"
@@ -319,7 +328,9 @@ section "Setting up wallpapers"
 mkdir -p "$HOME/pics/wallpapers/upscale"
 mkdir -p "$HOME/pics/screenshots"
 
-# Copy wallpapers from dotfiles repo
+# Wallpapers are NOT tracked in this repo — they are large and personal, so a
+# fresh clone has no wallpapers/ directory and this block is skipped. It is kept
+# for anyone who adds their own wallpapers/ to a fork.
 if [[ -d "$DOTFILES_DIR/wallpapers" ]]; then
     cp "$DOTFILES_DIR/wallpapers/"*.png "$HOME/pics/wallpapers/" 2>/dev/null || true
     cp "$DOTFILES_DIR/wallpapers/"*.jpg "$HOME/pics/wallpapers/" 2>/dev/null || true
@@ -328,7 +339,20 @@ if [[ -d "$DOTFILES_DIR/wallpapers" ]]; then
     info "Copied wallpapers from dotfiles repo"
 fi
 
-success "Wallpapers ready at ~/pics/wallpapers"
+# Say what is actually true. The old unconditional "Wallpapers ready" was
+# reassuring nonsense on a fresh install, where the folder is empty and the
+# palette step further down has nothing to work from.
+WP_COUNT=$(find "$HOME/pics/wallpapers" -maxdepth 1 -type f \
+    \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) 2>/dev/null | wc -l)
+
+if (( WP_COUNT > 0 )); then
+    success "Wallpapers ready at ~/pics/wallpapers ($WP_COUNT found)"
+else
+    warn "No wallpapers yet. Put some in ~/pics/wallpapers, then run:"
+    warn "    ~/.local/bin/wal-hypr.sh ~/pics/wallpapers/<image>"
+    warn "  After that, Super+W opens the picker. Until a palette exists the bar"
+    warn "  and lock screen fall back to unstyled defaults."
+fi
 
 # ── Machine-local config ─────────────────────────────────────
 section "Setting up machine-local config"
@@ -393,6 +417,46 @@ if [[ ! -f "$ZSHRC_LOCAL" ]]; then
 
 ZSHLOCAL
     success "Created ~/.zshrc.local"
+fi
+
+# ── Secrets ──────────────────────────────────────────────────
+section "Setting up secrets"
+
+# The deploy step above copies secrets.env.example (it is tracked), but the real
+# file has to be created here or nothing ever reads a key: ~/.zshrc sources
+# ~/.config/shell/secrets.env only `if` it exists, so its absence is silent.
+#
+# Created empty and 0600 rather than prompting. An unset key degrades visibly —
+# the waybar weather module falls to its alert glyph — which is a better failure
+# than a half-configured install that looks fine.
+SECRETS="$HOME/.config/shell/secrets.env"
+mkdir -p "$HOME/.config/shell"
+
+if [[ ! -f "$SECRETS" ]]; then
+    if [[ -f "$DOTFILES_DIR/.config/shell/secrets.env.example" ]]; then
+        cp "$DOTFILES_DIR/.config/shell/secrets.env.example" "$SECRETS"
+    else
+        printf '%s\n' 'export HOME_ASSISTANT_TOKEN=""' 'export OPENWEATHER_API_KEY=""' > "$SECRETS"
+    fi
+    chmod 600 "$SECRETS"
+    success "Created ~/.config/shell/secrets.env (0600) — add your keys"
+else
+    chmod 600 "$SECRETS"
+    info "~/.config/shell/secrets.env already exists, left untouched"
+fi
+
+# waybar's weather module reads its OWN copy and does not see the shell's
+# environment, because waybar is started by Hyprland rather than from a login
+# shell. Two files, one key — rotating it means editing both, which is called
+# out in the README and in secrets.env.example.
+WEATHER_ENV="$HOME/.config/waybar/weather.env"
+if [[ ! -f "$WEATHER_ENV" ]]; then
+    mkdir -p "$HOME/.config/waybar"
+    echo 'OPENWEATHER_API_KEY=""' > "$WEATHER_ENV"
+    chmod 600 "$WEATHER_ENV"
+    success "Created ~/.config/waybar/weather.env (0600) — add the same key here"
+else
+    chmod 600 "$WEATHER_ENV"
 fi
 
 # ── Initial palette run ──────────────────────────────────────
