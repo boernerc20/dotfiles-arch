@@ -16,12 +16,26 @@ CITY="Falls Church, US"
 ###############################################################################
 # fetch once in °F
 ###############################################################################
+# EXIT 0 ON FAILURE, DELIBERATELY.
+#
+# waybar HIDES a custom module whose exec returns non-zero, so the old
+# `exit 1` here threw away the very glyph it had just printed: the module
+# vanished from the bar instead of showing that it was broken. That is the
+# worst outcome — a missing pill looks like a config mistake, while an alert
+# glyph tells you the API call failed.
+#
+# Seen for real on 2026-08-02: waybar restarted during the ~20 minutes a newly
+# generated OpenWeatherMap key takes to activate, got a 401, and the weather
+# module simply disappeared with nothing to explain why.
+#
+# The `interval` in config.jsonc is how long a failure persists on screen, so
+# recovery is not immediate either way — but at least it is now visible.
 weather=$(curl -sf \
   -G "https://api.openweathermap.org/data/2.5/weather" \
   --data-urlencode "q=$CITY" \
   --data-urlencode "appid=$API_KEY" \
   --data-urlencode "units=imperial"
-) || { echo "󰀦${GAP}Weather"; exit 1; }
+) || { echo "󰀦${GAP}Weather"; exit 0; }
 
 temp_f=$(jq '.main.temp' <<<"$weather")
 desc=$(jq -r '.weather[0].main' <<<"$weather")
