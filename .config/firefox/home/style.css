@@ -1,372 +1,310 @@
 /* ===========================================================================
-   Firefox start page — cyberpunk, matched to the Hyprland desktop
+   Firefox start page
    ---------------------------------------------------------------------------
-   colors.css and surfaces.css are <link>ed by index.html, in that order, and
-   are symlinks into ~/.cache/wal/. Every colour here comes from them; there is
-   no hardcoded hex anywhere except pure black/white used for shadow alpha.
+   Every colour comes from colors.css / surfaces.css, which are symlinks into
+   ~/.cache/wal/ and are rewritten by wal-hypr.sh on each wallpaper change.
+   No hardcoded hue anywhere; the only literal is black, used for shadow alpha.
 
-   PALETTE ROLES — identical to waybar/style-base.css and the hyprlock template,
-   so the browser reads as part of the same system rather than a lookalike:
-       --app-bg      near-black plate fill   (clamped by ~/.config/wal/postrun)
-       --color4      primary accent          (clock, active borders, focus ring)
-       --color6      secondary readouts      (links, section icons)
-       --color8      recessed / muted text
+   Roles match waybar/style-base.css and the hyprlock template so the browser
+   reads as part of the same system:
+       --app-bg      near-black surface (postrun clamps it)
+       --color4      accent
+       --color6      secondary text
+       --color8      recessed text
        --foreground  primary text
-       --color1      alert                   (unused here, kept for parity)
 
-   Use --app-* rather than --background for surfaces. colors.css alone gives the
-   raw unclamped palette, which sits lighter than every GTK/Qt window and made
-   the browser look like a different theme.
+   DESIGN NOTE — why this is not a card grid.
+   The previous revision put the bookmarks in four bordered, rounded cards in a
+   responsive grid. That is the default answer for any dashboard and said
+   nothing about this particular page. This page is opened dozens of times a day
+   by one person whose entire desktop is driven by modifier chords, so the links
+   are set as a KEYBIND TABLE — `key  name`, aligned, the same shape as the
+   binding tables in the dotfiles README. The accelerator is the structure, and
+   it replaced the per-link icons: key + icon + label had the icon doing no work
+   the label wasn't already doing.
 
-   GEOMETRY — the desktop's "plating" cue is a clipped diagonal corner,
-   4px / 14px, with a 1px accent edge, an inset top highlight so the rim catches
-   light, and a small OFFSET drop shadow. Offset reads as depth; a symmetric
-   blur reads as a halo, and a halo goes square when the radius is this tight.
+   The borders went with the cards. One element is boxed — the search field —
+   so the only framed thing on the page is the only control you type into.
    =========================================================================== */
 
 :root {
-  /* The desktop is entirely JetBrainsMono Nerd Font. The previous value here
-     was 'CartographCF Nerd Font', which is NOT INSTALLED on this machine —
-     `fc-list | grep -i cartograph` returns nothing — so the page had been
-     silently falling back to a generic monospace and never matched anything. */
+  /* The whole desktop is JetBrainsMono Nerd Font. A previous revision asked for
+     'CartographCF Nerd Font', which is not installed here, so the page had been
+     silently falling back to a generic monospace. */
   --font: "JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, monospace;
 
-  --plate: color-mix(in srgb, var(--app-bg) 62%, transparent);
-  --edge: color-mix(in srgb, var(--color4) 45%, transparent);
+  --edge: color-mix(in srgb, var(--color4) 38%, transparent);
   --edge-hot: color-mix(in srgb, var(--color4) 85%, transparent);
-  --radius: 4px 14px 4px 14px;
-
-  --glow-accent: 0 0 9px color-mix(in srgb, var(--color4) 80%, transparent);
-  --glow-soft: 0 0 6px color-mix(in srgb, var(--color6) 45%, transparent);
-
-  --plate-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent),
-    0 2px 5px color-mix(in srgb, #000 38%, transparent);
+  --glow: 0 0 26px color-mix(in srgb, var(--color4) 26%, transparent);
 }
 
 * { box-sizing: border-box; }
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+html, body { height: 100%; margin: 0; }
 
 body {
   background: var(--app-bg);
   color: var(--foreground);
   font-family: var(--font);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
   overflow-x: hidden;
 }
 
-/* ── Backdrop ──────────────────────────────────────────────────────────────
-   --wallpaper is set by wallust in colors.css and always points at the CURRENT
-   wallpaper, so this never goes stale. Treated exactly like the hyprlock
-   background: blurred and dimmed hard, so it reads as a lit surface behind
-   instrumentation rather than as a picture with text on top. Previously the
-   page used the wallpaper at full brightness, which is why it looked washed
-   out and lighter than every native window. */
+/* ── Backdrop ───────────────────────────────────────────────────────────────
+   /wallpaper is a route in serve.py that resolves ~/.current_wallpaper per
+   request, so this follows Super+W with no restart. It is deliberately NOT
+   var(--wallpaper): that holds an absolute filesystem path, which over
+   http://localhost resolves against the server root and 404s every time.
+
+   Dimmed hard and blurred, the way hyprlock treats the same image. The page has
+   to stay readable on a pale wallpaper, and the type must never compete with
+   the picture. */
 .backdrop {
   position: fixed;
-  inset: -40px;                     /* overscan so the blur has no soft edge */
-
-  /* NOT var(--wallpaper). That variable holds an absolute FILESYSTEM path
-     (/home/chris/pics/wallpapers/…), and over http://localhost a leading slash
-     resolves against the server root — so the browser asked for
-     localhost:8080/home/chris/... and got a 404 every single time. The backdrop
-     could never load, which is the whole reason this page never showed the
-     current wallpaper.
-     /wallpaper is a route in serve.py that resolves ~/.current_wallpaper at
-     request time, so it follows Super+W with no restart. */
-  background-image: url("wallpaper");
-  background-size: cover;
-  background-position: center;
-  filter: blur(22px) brightness(0.38) saturate(1.25);
-  z-index: -2;
+  inset: -40px;
+  background: var(--app-bg) url("wallpaper") center / cover no-repeat;
+  filter: blur(22px) brightness(0.40) saturate(1.15);
+  z-index: -1;
 }
 
-/* A dark vignette + wash on top of the image. Two jobs: it guarantees text
-   contrast on a pale wallpaper, and it tints everything toward the palette so
-   a wallpaper with an off-palette cast cannot fight the accent colour. */
 .backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 42%,
-      transparent 0%,
-      color-mix(in srgb, var(--app-bg) 55%, transparent) 55%,
-      color-mix(in srgb, var(--app-bg) 88%, transparent) 100%),
-    linear-gradient(0deg,
-      color-mix(in srgb, var(--app-bg) 72%, transparent),
-      color-mix(in srgb, var(--app-bg) 72%, transparent));
-}
-
-/* Faint horizontal scanlines — the one purely decorative element. Kept at 3%
-   alpha and 3px pitch: enough to register as CRT texture at a glance, not
-   enough to interfere with reading 13px type. */
-.scanlines {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    180deg,
-    color-mix(in srgb, #000 3%, transparent) 0px,
-    color-mix(in srgb, #000 3%, transparent) 1px,
-    transparent 1px,
-    transparent 3px);
+  background: radial-gradient(ellipse at 50% 40%,
+    transparent 0%,
+    color-mix(in srgb, var(--app-bg) 58%, transparent) 52%,
+    color-mix(in srgb, var(--app-bg) 95%, transparent) 100%);
 }
 
 .stage {
-  width: min(1100px, 92vw);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3vh 0;
+  width: min(880px, 90vw);
+  padding: 4vh 0;
 }
 
-/* ── HUD strip ─────────────────────────────────────────────────────────────
-   The waybar readout grammar, reused: a dim icon, a bright value, and U+2502
-   between fields. */
+/* ── HUD ────────────────────────────────────────────────────────────────────
+   A hairline rule with a label at each end. No pill, no box: the bar at the top
+   of the screen already does plates, and repeating them here would make the
+   browser look like a second waybar rather than part of the same desk. */
 .hud {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 3.2rem;
-  font-size: 13px;
-  letter-spacing: 0.4px;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--color8);
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color4) 16%, transparent);
 }
 
-.hud-chip {
-  background: var(--plate);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  box-shadow: var(--plate-shadow);
-  padding: 5px 14px;
-  color: var(--color6);
-  text-shadow: var(--glow-soft);
-  white-space: nowrap;
-}
+.host { color: var(--color6); }
+.at { opacity: 0.4; }
+.stamp { text-align: right; }
 
-.dim { opacity: 0.72; }
-
-/* The bar binds an icon to its value with a size-scaled space rather than a
-   literal one, because a literal space is a full monospace cell and leaves the
-   icon floating. Same trick here, as a fixed-width inline element. */
-.gap { display: inline-block; width: 0.45em; }
-
-.sep {
-  opacity: 0.38;
-  margin: 0 0.55em;
-}
-
-/* ── Clock ─────────────────────────────────────────────────────────────── */
+/* ── Clock ────────────────────────────────────────────────────────────────
+   The hero. Very large, tight, tabular figures, with the colon and meridiem
+   dropped back so the digits carry the whole line. Tabular numerals matter at
+   this size — proportional ones make the layout twitch every minute. */
 .clockblock {
   text-align: center;
-  margin-bottom: 2.6rem;
+  padding: 5vh 0 0;
 }
 
 .time {
-  font-size: clamp(48px, 8.5vw, 96px);
-  font-weight: 700;
-  line-height: 1;
-  color: var(--color4);
-  text-shadow: var(--glow-accent);
-  letter-spacing: 2px;
-  font-variant-numeric: tabular-nums;   /* stop the layout shifting every minute */
+  margin: 0;
+  font-size: clamp(64px, 13vw, 152px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  text-shadow: var(--glow);
 }
 
-/* The lock screen's accent rule, same role: separates the clock from what is
-   below it without drawing a box. Wider than the text it divides, and faint —
-   a rule, not an underline. */
+.time .tick {
+  color: var(--color4);
+  opacity: 0.55;
+  margin: 0 0.04em;
+}
+
+/* The meridiem is a footnote to the number, not part of it: quarter size, lifted
+   to the cap line, tracked out, and recessed. */
+.time .meridiem {
+  font-size: 0.22em;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  color: var(--color6);
+  vertical-align: 0.9em;
+  margin-left: 0.5em;
+  text-shadow: none;
+}
+
+/* The lock screen's accent rule, reused so the two surfaces rhyme. */
 .rule {
-  width: min(460px, 60vw);
+  width: 100%;
+  max-width: 420px;
   height: 1px;
-  margin: 1.5rem auto 1.2rem;
+  margin: 1.8rem auto 1.1rem;
   background: linear-gradient(90deg,
     transparent,
-    color-mix(in srgb, var(--color4) 55%, transparent) 20%,
-    color-mix(in srgb, var(--color4) 55%, transparent) 80%,
+    color-mix(in srgb, var(--color4) 60%, transparent) 25%,
+    color-mix(in srgb, var(--color4) 60%, transparent) 75%,
     transparent);
 }
 
 .greeting {
-  font-size: 17px;
-  color: var(--color6);
-  letter-spacing: 0.6px;
-  text-shadow: var(--glow-soft);
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--color8);
 }
 
-.greeting #greeting { opacity: 0.72; }
+.greeting #greeting { color: var(--color6); }
 
-/* ── Search ────────────────────────────────────────────────────────────── */
+/* ── Search ─────────────────────────────────────────────────────────────────
+   The only boxed element on the page. A shell prompt rather than a magnifier:
+   this page's whole vocabulary is terminal, and a chevron says "type here" to
+   this particular user more directly than a magnifying glass does. */
 .search {
   position: relative;
-  width: min(560px, 88vw);
-  margin-bottom: 3rem;
   display: flex;
   align-items: center;
+  margin: 2.6rem auto 2.8rem;
+  max-width: 520px;
 }
 
-.search-icon,
-.search-hint {
+.prompt {
   position: absolute;
-  color: var(--color8);
+  left: 18px;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--color4);
+  opacity: 0.6;
   pointer-events: none;
-  font-size: 15px;
-  transition: color 0.2s, text-shadow 0.2s;
+  transition: opacity 0.2s;
 }
-
-.search-icon { left: 16px; }
-.search-hint { right: 16px; opacity: 0.45; font-size: 13px; }
 
 .search-input {
   width: 100%;
-  height: 46px;
-  padding: 0 42px 0 44px;
-  font-family: var(--font);
+  height: 48px;
+  padding: 0 18px 0 40px;
+  font: inherit;
   font-size: 15px;
-  letter-spacing: 0.4px;
-
-  /* Accent on the EDGE, never as a fill. An earlier revision used --color2 as
-     the background on the theory that it was a mid grey; on this palette it
-     resolves to a saturated magenta, and the search box became the single
-     brightest object on the desktop. */
-  background: var(--plate);
+  letter-spacing: 0.5px;
   color: var(--foreground);
+  background: color-mix(in srgb, var(--app-bg) 55%, transparent);
   border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  box-shadow: var(--plate-shadow);
+  /* The desktop's clipped-corner plating, at the one place it still appears. */
+  border-radius: 4px 14px 4px 14px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .search-input::placeholder {
   color: var(--color8);
-  opacity: 0.55;
-}
-
-.search-input:hover {
-  border-color: color-mix(in srgb, var(--color4) 60%, transparent);
+  opacity: 0.5;
+  letter-spacing: 3px;
 }
 
 .search-input:focus {
   border-color: var(--edge-hot);
-  background: color-mix(in srgb, var(--app-bg) 88%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent),
-    0 0 16px color-mix(in srgb, var(--color4) 34%, transparent);
-}
-
-.search:focus-within .search-icon {
-  color: var(--color4);
-  text-shadow: var(--glow-accent);
-}
-
-/* ── Bookmark plates ───────────────────────────────────────────────────── */
-.grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
-}
-
-.plate {
-  background: var(--plate);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  box-shadow: var(--plate-shadow);
-  padding: 16px 18px 14px;
-  transition: border-color 0.22s, box-shadow 0.22s, background-color 0.22s;
-}
-
-.plate:hover {
-  border-color: color-mix(in srgb, var(--color4) 65%, transparent);
   background: color-mix(in srgb, var(--app-bg) 78%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 9%, transparent),
-    0 0 18px color-mix(in srgb, var(--color4) 22%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color4) 22%, transparent);
 }
 
-.plate-title {
-  margin: 0 0 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2.2px;
+.search:focus-within .prompt { opacity: 1; }
+
+/* ── Link table ─────────────────────────────────────────────────────────── */
+.links {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem 1.5rem;
+}
+
+.col h2 {
+  margin: 0 0 1rem;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 4px;
   color: var(--color4);
-  text-shadow: var(--glow-accent);
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color4) 20%, transparent);
+  opacity: 0.75;
 }
 
-.plate ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.plate li + li { margin-top: 2px; }
-
-.plate a {
+.col a {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 8px;
-  margin: 0 -8px;
-  font-size: 14px;
-  letter-spacing: 0.3px;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 4px 0;
+  font-size: 14.5px;
+  letter-spacing: 0.4px;
   color: var(--color6);
   text-decoration: none;
-  border-radius: 3px 10px 3px 10px;
-  transition: color 0.18s, background-color 0.18s, text-shadow 0.18s;
+  transition: color 0.15s;
 }
 
-.plate a .ico {
-  opacity: 0.72;
-  font-size: 15px;
-  width: 1.25em;
+/* The accelerator. Sits in its own fixed-width column so all sixteen letters
+   line up vertically — that alignment is what makes it read as a reference
+   table instead of decoration hanging off each label. */
+.col kbd {
+  flex: none;
+  width: 1.15em;
+  font: inherit;
+  font-size: 12px;
   text-align: center;
-  transition: opacity 0.18s;
+  color: var(--color8);
+  opacity: 0.7;
+  transition: color 0.15s, opacity 0.15s;
 }
 
-/* Hover lifts the item rather than the whole plate: a tinted fill plus full
-   -strength icon, matching how waybar's utility buttons respond. */
-.plate a:hover {
+.col a:hover,
+.col a:focus-visible {
   color: var(--foreground);
-  background: color-mix(in srgb, var(--color4) 16%, transparent);
-  text-shadow: var(--glow-accent);
+  outline: none;
 }
 
-.plate a:hover .ico { opacity: 1; }
-
-.plate a:focus-visible {
-  outline: 1px solid var(--edge-hot);
-  outline-offset: 1px;
+.col a:hover kbd,
+.col a:focus-visible kbd {
+  color: var(--color4);
+  opacity: 1;
 }
 
-/* ── Narrow screens ────────────────────────────────────────────────────── */
-@media (max-width: 620px) {
-  .hud { margin-bottom: 2rem; font-size: 12px; }
-  .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .plate { padding: 13px 14px 11px; }
-  .clockblock { margin-bottom: 1.8rem; }
-  .rule { margin: 1.1rem auto 0.9rem; }
+/* Keyboard users get a visible marker; the hover colour alone is not enough. */
+.col a:focus-visible span {
+  box-shadow: 0 1px 0 var(--edge-hot);
 }
 
-@media (max-width: 400px) {
-  .grid { grid-template-columns: 1fr; }
+.legend {
+  margin: 2.6rem 0 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--color8);
+  opacity: 0.7;
 }
 
-/* Someone who has asked for reduced motion still gets the design, just without
-   the transitions. */
+.legend kbd {
+  font: inherit;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--color8) 40%, transparent);
+  border-radius: 3px;
+}
+
+/* ── Narrow ─────────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .links { grid-template-columns: repeat(2, 1fr); gap: 2rem 1rem; }
+  .clockblock { padding-top: 4vh; }
+  .search { margin: 2.4rem auto 3.2rem; }
+  .rule { margin: 1.6rem auto 1rem; }
+}
+
+@media (max-width: 380px) {
+  .links { grid-template-columns: 1fr; }
+  .hud { font-size: 10px; letter-spacing: 1px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }

@@ -7,14 +7,10 @@
   <title>home</title>
   <link rel="icon" type="image/x-icon" href="icons/arch.png">
 
-  <!-- Order matters: surfaces.css overrides colors.css, style.css consumes both.
-       Both are symlinks into ~/.cache/wal/ and are rewritten on every wallpaper
-       change by wal-hypr.sh.
-
-       There is deliberately NO JS cache-buster here any more. It was a client
-       -side patch for a server that sent no cache headers, it could never help
-       the first paint, and it failed silently. serve.py now sends
-       `Cache-Control: no-store`, which is the actual fix. -->
+  <!-- colors.css and surfaces.css are symlinks into ~/.cache/wal/, rewritten by
+       wal-hypr.sh on every wallpaper change. serve.py sends Cache-Control:
+       no-store, so there is no JS cache-buster here; that was a client-side
+       patch for a server-header defect and could never fix the first paint. -->
   <link rel="stylesheet" href="colors.css">
   <link rel="stylesheet" href="surfaces.css">
   <link rel="stylesheet" href="style.css">
@@ -23,104 +19,112 @@
 
 <body onload="realtimeClock()">
 
-  <!-- Wallpaper backdrop. Its own element rather than a body background so the
-       blur and dim can be applied without touching the content above it. The
-       image comes from --wallpaper in colors.css, which wallust rewrites on
-       every switch, so this is always the CURRENT wallpaper. -->
   <div class="backdrop" aria-hidden="true"></div>
-  <div class="scanlines" aria-hidden="true"></div>
 
   <main class="stage">
 
-    <!-- HUD strip — same readout grammar as the waybar: dim label, bright
-         value, U+2502 between fields. -->
-    <div class="hud">
-      <span class="hud-chip">
-        <span class="dim">󰆍</span><span class="gap"></span>chris<span class="sep">│</span>workstation
-      </span>
-      <span class="hud-chip">
-        <span class="dim">󰃭</span><span class="gap"></span><span id="date">&nbsp;</span>
-      </span>
-    </div>
+    <header class="hud">
+      <span class="host">chris<span class="at">@</span>workstation</span>
+      <span class="stamp" id="date">&nbsp;</span>
+    </header>
 
     <section class="clockblock">
-      <div class="time"><span id="clock">&nbsp;</span></div>
-      <div class="rule"></div>
-      <div class="greeting"><span id="greeting">Hello</span> Chris</div>
+      <!-- The colon and meridiem are dimmed in CSS so the eye lands on the
+           digits. time.js emits them as separate spans for exactly that. -->
+      <h1 class="time"><span id="clock">&nbsp;</span></h1>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="greeting"><span id="greeting">hello</span>, chris</p>
     </section>
 
     <form class="search" action="https://www.google.com/search" method="get" autocomplete="off">
-      <span class="search-icon">󰍉</span>
+      <span class="prompt" aria-hidden="true">&rsaquo;</span>
       <input id="searchInput" class="search-input" type="text" name="q"
-             placeholder="search" autocomplete="off" autofocus>
-      <span class="search-hint">↵</span>
+             placeholder="search" aria-label="Search the web" autocomplete="off" autofocus>
     </form>
 
-    <nav class="grid">
+    <!-- Columns are a keybind reference, not cards. Each row is `key  name`,
+         aligned, because that is what a keybind table looks like — the same
+         shape as the tables in the dotfiles README. -->
+    <nav class="links" aria-label="Bookmarks">
 
-      <section class="plate">
-        <h2 class="plate-title"><span class="ico">󰇮</span>DAILY</h2>
-        <ul>
-          <li><a href="https://gmail.com"><span class="ico">󰇮</span>Gmail</a></li>
-          <li><a href="https://chatgpt.com/"><span class="ico">󰚩</span>ChatGPT</a></li>
-          <li><a href="https://amazon.com/"><span class="ico">󰄐</span>Amazon</a></li>
-          <li><a href="https://linkedin.com"><span class="ico">󰌸</span>LinkedIn</a></li>
-        </ul>
+      <section class="col">
+        <h2>daily</h2>
+        <a href="https://gmail.com"      data-key="g"><kbd>g</kbd><span>gmail</span></a>
+        <a href="https://chatgpt.com/"   data-key="c"><kbd>c</kbd><span>chatgpt</span></a>
+        <a href="https://amazon.com/"    data-key="a"><kbd>a</kbd><span>amazon</span></a>
+        <a href="https://linkedin.com"   data-key="l"><kbd>l</kbd><span>linkedin</span></a>
       </section>
 
-      <section class="plate">
-        <h2 class="plate-title"><span class="ico">󰊤</span>WORK</h2>
-        <ul>
-          <li><a href="https://github.com/"><span class="ico">󰊤</span>GitHub</a></li>
-          <li><a href="https://calendar.google.com"><span class="ico">󰃭</span>Calendar</a></li>
-          <li><a href="https://drive.google.com/"><span class="ico">󰋊</span>Drive</a></li>
-          <li><a href="https://app.capacities.io/"><span class="ico">󰈙</span>Capacities</a></li>
-        </ul>
+      <section class="col">
+        <h2>work</h2>
+        <a href="https://github.com/"        data-key="h"><kbd>h</kbd><span>github</span></a>
+        <a href="https://calendar.google.com" data-key="k"><kbd>k</kbd><span>calendar</span></a>
+        <a href="https://drive.google.com/"   data-key="d"><kbd>d</kbd><span>drive</span></a>
+        <a href="https://app.capacities.io/"  data-key="s"><kbd>s</kbd><span>capacities</span></a>
       </section>
 
-      <section class="plate">
-        <h2 class="plate-title"><span class="ico">󰙯</span>SOCIAL</h2>
-        <ul>
-          <li><a href="https://reddit.com/"><span class="ico">󰔇</span>Reddit</a></li>
-          <li><a href="https://instagram.com/"><span class="ico">󰋾</span>Instagram</a></li>
-          <li><a href="https://outlook.office.com/"><span class="ico">󰞇</span>Outlook</a></li>
-          <li><a href="https://discord.com/channels/@me"><span class="ico">󰙯</span>Discord</a></li>
-        </ul>
+      <section class="col">
+        <h2>social</h2>
+        <a href="https://reddit.com/"    data-key="r"><kbd>r</kbd><span>reddit</span></a>
+        <a href="https://instagram.com/" data-key="i"><kbd>i</kbd><span>instagram</span></a>
+        <a href="https://outlook.office.com/" data-key="o"><kbd>o</kbd><span>outlook</span></a>
+        <a href="https://discord.com/channels/@me" data-key="e"><kbd>e</kbd><span>discord</span></a>
       </section>
 
-      <section class="plate">
-        <h2 class="plate-title"><span class="ico">󰗃</span>MEDIA</h2>
-        <ul>
-          <li><a href="https://youtube.com/"><span class="ico">󰗃</span>YouTube</a></li>
-          <li><a href="https://primevideo.com/"><span class="ico">󰘔</span>Prime Video</a></li>
-          <li><a href="https://twitch.tv/"><span class="ico">󰠹</span>Twitch</a></li>
-          <li><a href="https://netflix.com/"><span class="ico">󰝆</span>Netflix</a></li>
-        </ul>
+      <section class="col">
+        <h2>media</h2>
+        <a href="https://youtube.com/"   data-key="y"><kbd>y</kbd><span>youtube</span></a>
+        <a href="https://primevideo.com/" data-key="p"><kbd>p</kbd><span>prime</span></a>
+        <a href="https://twitch.tv/"     data-key="t"><kbd>t</kbd><span>twitch</span></a>
+        <a href="https://netflix.com/"   data-key="n"><kbd>n</kbd><span>netflix</span></a>
       </section>
 
     </nav>
+
+    <!-- Says the whole interaction model once, quietly, instead of repeating a
+         modifier on all sixteen rows. -->
+    <p class="legend"><kbd>alt</kbd> + key to jump</p>
+
   </main>
 
   <script>
-    // Focus the search field. Firefox can steal focus back while the page is
-    // still settling, so autofocus alone is not reliable for a homepage.
-    window.addEventListener('load', () => {
-      setTimeout(() => document.getElementById('searchInput')?.focus({ preventScroll: true }), 100);
+    const $ = (id) => document.getElementById(id);
+
+    // Alt as the modifier, not a bare letter. The search field is autofocused,
+    // so a bare-letter accelerator would make it impossible to search for
+    // anything starting with a bound letter — typing "github" would navigate on
+    // the "g". Alt also matches how the rest of this desktop works, where every
+    // action is a modifier chord.
+    const targets = new Map(
+      [...document.querySelectorAll('a[data-key]')].map(a => [a.dataset.key, a.href])
+    );
+
+    addEventListener('keydown', (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+      const href = targets.get(e.key.toLowerCase());
+      if (!href) return;
+      e.preventDefault();
+      location.href = href;
     });
 
-    // Date line in the HUD, and a greeting that tracks the clock. Both are
-    // rendered here rather than baked in so the page never shows a stale value
-    // if it is left open across midnight.
-    function paintDate() {
+    // Firefox can pull focus back while a homepage is still settling, so
+    // autofocus alone is not reliable here.
+    addEventListener('load', () => {
+      setTimeout(() => $('searchInput')?.focus({ preventScroll: true }), 100);
+    });
+
+    // Rendered rather than baked in, so a page left open overnight is not stale.
+    function paintStamp() {
       const now = new Date();
-      document.getElementById('date').textContent =
-        now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' });
+      $('date').textContent = now
+        .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+        .toLowerCase();
       const h = now.getHours();
-      document.getElementById('greeting').textContent =
-        h < 5 ? 'Still up,' : h < 12 ? 'Morning,' : h < 18 ? 'Afternoon,' : 'Evening,';
+      $('greeting').textContent =
+        h < 5 ? 'still up' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
     }
-    paintDate();
-    setInterval(paintDate, 60000);
+    paintStamp();
+    setInterval(paintStamp, 60000);
   </script>
 </body>
 
