@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# lock — single-instance wrapper around hyprlock.
+#
+# WHY THIS EXISTS
+# ---------------
+# On 2026-07-30 SUPER+L was pressed twice in quick succession. Two hyprlock
+# instances started 2 seconds apart and PAM authenticated BOTH:
+#     23:38:25  pam_usb[2058465]  hyprlock  Access granted.
+#     23:38:27  pam_usb[2059277]  hyprlock  Access granted.
+# The first owned the ext-session-lock. It exited; the survivor had
+# authenticated but did not own the lock, so it had nothing to release. The
+# session stayed locked with no way in. Recovery cost every open window
+# (`hyprctl dispatch exit`).
+#
+# The old guard was `pidof hyprlock || hyprlock`, which is a CHECK, not a
+# mutex. hyprlock takes ~1s to appear in the process table, so two presses
+# inside that window both read "not running" and both launch. No amount of
+# tightening a pidof test fixes that — the check and the launch can never be
+# made atomic from the shell.
+#
+# flock(2) is atomic by construction. The lock lives on a file descriptor that
+# is inherited across exec, so it is held for exactly as long as hyprlock runs
+# and is released by the kernel when hyprlock exits — including if it crashes
+# or is killed. There is no window and no stale-lockfile cleanup to get wrong.
+#
+# FAIL-OPEN, DELIBERATELY
+# -----------------------
+# If a preflight check fails this refuses to lock rather than locking with a
+# config that might not render. Not locking is a recoverable annoyance; a lock
+# screen that cannot draw its own password box is not. This machine sits in a
+# home office behind a default-DROP firewall, so the trade is worth it — on a
+# laptop that leaves the house it would not be.
+#
+# Usage:
+#   lock              lock the session
+#   lock --check      run preflight only, print findings, never lock
+#   lock --self-test  prove the mutex refuses a second instance, never lock
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+MUTEX="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hyprlock.mutex"
+CONFIG="$HOME/.config/hypr/hyprlock.conf"
+
+notify() {
+    command -v notify-send &>/dev/null && notify-send -u critical "Lock screen" "$1" || true
+    echo -e "${RED}lock: $1${NC}" >&2
+}
+
+# Every check here answers one question: could hyprlock fail to draw a working
+# password prompt? If so, do not take the session lock.
+preflight() {
+    local ok=0
+
+    if ! command -v hyprlock &>/dev/null; then
+        notify "hyprlock is not installed"; ok=1
+    fi
+
+    if [[ ! -s "$CONFIG" ]]; then
+        notify "$CONFIG is missing or empty"; ok=1
+    elif grep -qE '^\s*source\s*=' "$CONFIG"; then
+        # The 2026-07-28 lockout: the template contained a source line pointing
+        # at its own rendered output. Hyprlang recursed, hyprlock died holding
+        # the lock. The template is fixed, but this is cheap to assert and the
+        # file is regenerated on every wallpaper change.
+        notify "$CONFIG contains a 'source =' line — refusing to lock"; ok=1
+    fi
+
+    # An input-field is the only way back in. A config that renders a clock and
+    # nothing else is exactly the lockout shape to avoid.
+    if [[ -s "$CONFIG" ]] && ! grep -q 'input-field' "$CONFIG"; then
+        notify "$CONFIG has no input-field — refusing to lock"; ok=1
+    fi
+
+    if [[ ! -r /etc/pam.d/hyprlock ]]; then
+        notify "/etc/pam.d/hyprlock missing — PAM auth would fail"; ok=1
+    else
+        # THE AUTO-UNLOCK REGRESSION GUARD.
+        #
+        # pam_usb is `sufficient`, and hyprlock opens its PAM conversation the
+        # instant it starts — so with the auth key in the port it is granted
+        # access before the password box is drawn. The screen locks and
+        # immediately unlocks itself. That is not hypothetical: it happened on
+        # 5 of 5 attempts on 2026-08-01, and it is why the 2026-07-30
+        # double-instance race authenticated both instances in 2 seconds.
+        #
+        # It can come back WITHOUT anyone editing this file. /etc/pam.d/hyprlock
+        # is owned by the hyprlock package and is in its backup array, so an
+        # update ships a .pacnew. The pristine file is `auth include login`,
+        # and login -> system-local-login -> system-auth, which has
+        # `auth sufficient pam_usb.so`. Merging that .pacnew silently restores
+        # auto-unlock. Delete the .pacnew instead of merging it.
+        #
+        # Refusing to lock is the deliberate choice over locking anyway: a lock
+        # screen that anyone can dismiss with Enter is worse than no lock,
+        # because you walk away believing you are protected.
+        if grep -qE '^\s*[-]?auth\s+.*pam_usb\.so' /etc/pam.d/hyprlock; then
+            notify "pam_usb is back in /etc/pam.d/hyprlock — the screen would unlock itself. Refusing to lock. (Did a .pacnew get merged?)"
+            ok=1
+        fi
+        if grep -qE '^\s*[-]?auth\s+include\s+(login|system-auth|system-local-login)' /etc/pam.d/hyprlock; then
+            notify "/etc/pam.d/hyprlock includes the system auth stack, which contains pam_usb — the screen would unlock itself. Refusing to lock."
+            ok=1
+        fi
+    fi
+
+    return $ok
+}
+
+self_test() {
+    local m="${MUTEX}.selftest" a b
+    a=$(mktemp); b=$(mktemp)
+    rm -f "$m"
+
+    # Two independent processes racing for the same lock, started as close
+    # together as the shell allows — the scenario that caused the lockout.
+    ( exec 9>"$m"; if flock -n 9; then echo acquired; sleep 2; else echo refused; fi ) >"$a" 2>&1 &
+    local p1=$!
+    ( exec 9>"$m"; if flock -n 9; then echo acquired; sleep 2; else echo refused; fi ) >"$b" 2>&1 &
+    local p2=$!
+    wait $p1 $p2 || true
+
+    local r1 r2 acquired
+    r1=$(cat "$a"); r2=$(cat "$b")
+    acquired=$(grep -c acquired <<<"$r1$r2" || true)
+    rm -f "$a" "$b" "$m"
+
+    echo "  instance 1: $r1"
+    echo "  instance 2: $r2"
+    if [[ "$r1" != "$r2" && "$acquired" -eq 1 ]]; then
+        echo -e "${GREEN}PASS — exactly one instance acquired the mutex${NC}"
+        return 0
+    fi
+    echo -e "${RED}FAIL — mutex did not serialise (got: '$r1' / '$r2')${NC}"
+    return 1
+}
+
+case "${1:-}" in
+    --self-test)
+        echo "mutex self-test (no locking):"
+        self_test
+        exit $?
+        ;;
+    --check)
+        if preflight; then
+            echo -e "${GREEN}preflight OK — safe to lock${NC}"
+            exit 0
+        fi
+        echo -e "${YELLOW}preflight FAILED — lock would be refused${NC}"
+        exit 1
+        ;;
+esac
+
+preflight || exit 1
+
+# Hold the mutex on fd 9. `exec` replaces this shell with hyprlock, which
+# inherits fd 9 and therefore the lock. Do NOT rewrite this as
+# `flock -n "$MUTEX" hyprlock`: that form leaves flock as a parent process
+# between Hyprland and hyprlock, which complicates the session-lock lifetime
+# for no benefit.
+exec 9>"$MUTEX"
+if ! flock -n 9; then
+    # Already locking or locked. Silently succeed — this is the double-press
+    # case and it must be a no-op, not an error.
+    exit 0
+fi
+
+exec hyprlock "$@"

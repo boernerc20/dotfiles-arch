@@ -58,8 +58,15 @@ temp=$(
   done
 )
 
-# ─── GPU USAGE (NVIDIA) ───────────────────────────────────────────────────────
-gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits)
+# ─── GPU POWER DRAW (NVIDIA) ─────────────────────────────────────────────────
+gpu_power=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits | awk '{printf "%dW", $1}')
 
 # ─── OUTPUT FOR WAYBAR ───────────────────────────────────────────────────────
-echo "$cpu_icon ${cpu}%  $mem_icon ${mem}% $gpu_icon ${gpu}% $temp_icon ${temp}°C"
+# Icon-to-value gap. A literal space is a full monospace cell, the same
+# width as the gap between words, so the icon floated instead of binding to
+# its value. Pango letter_spacing is ignored in these labels (GTK's CSS
+# letter-spacing wins), but a space scaled with `size` does take effect.
+# Keep this identical across every bar script — it is a consistency rule.
+GAP="<span size='8704'> </span>"
+
+echo "${cpu_icon}${GAP}${cpu}%  ${mem_icon}${GAP}${mem}%  ${gpu_icon}${GAP}${gpu_power}  ${temp_icon}${GAP}${temp}°C"

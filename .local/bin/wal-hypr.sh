@@ -51,6 +51,21 @@ if pgrep -x waybar > /dev/null; then
     disown
 fi
 
+# 4a) Reload kitty.
+#
+# kitty.conf does `include ~/.cache/wal/colors-kitty.conf`, so a NEW terminal
+# always came up correctly and this step was easy to believe unnecessary — but
+# kitty reads that file only at startup. Every terminal already open kept the
+# previous wallpaper's palette indefinitely, which is the most visible surface
+# on this desktop and reads as "theme switching stopped working".
+#
+# SIGUSR1 makes kitty re-read its config in place. Deliberately not
+# `kitty @ set-colors`: that needs allow_remote_control, which opens a control
+# socket on every terminal purely to recolour one.
+if pgrep -x kitty >/dev/null; then
+    pkill -USR1 -x kitty || true
+fi
+
 # 5) Apply to cava
 if [ -x "$HOME/.local/bin/wal-cava.sh" ]; then
     "$HOME/.local/bin/wal-cava.sh"

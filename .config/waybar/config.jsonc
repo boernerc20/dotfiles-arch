@@ -81,9 +81,18 @@
     "tooltip": false
   },
 
+  // Date and time share ONE pill, date on the left.
+  //
+  // The hierarchy between them is done with Pango alpha rather than a second
+  // font, size or weight, so the pill stays typographically uniform with the
+  // rest of the bar — the date simply sits further back. The separator is
+  // U+2502 (Box Drawing), NOT a Private Use Area glyph, so it is outside the
+  // range that has been silently stripped from this file before.
   "clock": {
-    "format": "󰥔 {:%I:%M %p}",
-    "format-alt": "󰃭 {:%a %b %d}",
+    "format": "<span alpha='72%'>󰃭<span size='8704'> </span>{0:%a %b %d}</span><span alpha='38%'> │ </span>󰥔<span size='8704'> </span>{0:%I:%M %p}",
+    // Toggles to 24-hour. This used to toggle to the date, which is now
+    // permanently visible; seconds would need interval:1 to actually tick.
+    "format-alt": "<span alpha='72%'>󰃭<span size='8704'> </span>{0:%a %b %d}</span><span alpha='38%'> │ </span>󰥔<span size='8704'> </span>{0:%H:%M}",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
 
@@ -150,7 +159,7 @@
   "disk": {
     "path": "/",
     "interval": 120,
-    "format": "󰋊 {percentage_used}%",
+    "format": "󰋊<span size='8704'> </span>{percentage_used}%",
     "tooltip-format": "{used} used of {total}  ({free} free)"
   },
 
@@ -159,17 +168,33 @@
   // only to surface a Telegram icon that was never wanted. Removing the tray
   // means background apps have no bar presence at all — which is the intent.
 
+  // Structured to mirror the clock exactly, so the two ends of the bar read as
+  // a matched pair: dim leading group, faint divider, bright trailing group.
+  // Artist maps onto the date, title onto the time — the thing you actually
+  // want to read sits on the right at full strength in both pills.
+  //
+  // Only the TITLE is italic — the artist stays upright. A whole-module
+  // italic (the previous `font-style: italic` in style-base.css) slanted the
+  // icon and the artist too, which made the pill read as a different typeface
+  // from its neighbours rather than as emphasis.
+  //
+  // artist-len/title-len bound the FIELDS rather than relying on max-length
+  // alone. max-length would clip the composed string, and a cut landing inside
+  // a <span> or <i> tag yields invalid markup — the whole label then renders
+  // as raw tags. Truncating before substitution cannot produce that.
   "mpris": {
-    "format": "󰝚 {artist} - {title}",
-    "format-paused": "󰏤 {artist} - {title}",
-    "max-length": 45,
+    "format": "<span alpha='72%'>󰝚<span size='8704'> </span>{artist}</span><span alpha='38%'> │ </span><i>{title}</i>",
+    "format-paused": "<span alpha='72%'>󰏤<span size='8704'> </span>{artist}</span><span alpha='38%'> │ </span><i>{title}</i>",
+    "artist-len": 18,
+    "title-len": 30,
+    "max-length": 55,
     "player": "spotify",
     "on-click": "playerctl -p spotify play-pause"
   },
 
   "pulseaudio": {
-    "format": "{icon} {volume}%",
-    "format-muted": "󰝟 muted",
+    "format": "{icon}<span size='8704'> </span>{volume}%",
+    "format-muted": "󰝟<span size='8704'> </span>muted",
     // Material Design (nf-md) codepoints on purpose. The Font Awesome volume
     // icons live at U+F025-F028, inside the BMP Private Use Area, which is the
     // exact range that got silently stripped before. The nf-md equivalents sit

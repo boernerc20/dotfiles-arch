@@ -10,6 +10,13 @@
 # down. An error here must degrade to a quiet zero, never to a broken module.
 set -uo pipefail
 
+# Icon-to-value gap. A literal space is a full monospace cell, the same
+# width as the gap between words, so the icon floated instead of binding to
+# its value. Pango letter_spacing is ignored in these labels (GTK's CSS
+# letter-spacing wins), but a space scaled with `size` does take effect.
+# Keep this identical across every bar script — it is a consistency rule.
+GAP="<span size='8704'> </span>"
+
 ICON_PENDING="󰚰"   # nf-md-sync
 ICON_CURRENT="󰄬"   # nf-md-check
 
@@ -40,6 +47,6 @@ tooltip=$(
 )
 
 jq -cn \
-    --arg text "$ICON_PENDING $total" \
+    --arg text "${ICON_PENDING}${GAP}${total}" \
     --arg tooltip "$tooltip" \
     '{text: $text, tooltip: $tooltip, class: "pending"}'

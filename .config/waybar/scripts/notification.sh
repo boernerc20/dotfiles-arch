@@ -17,6 +17,13 @@
 # silently stick at zero, so re-check here if the badge stops moving.
 set -uo pipefail
 
+# Icon-to-value gap. A literal space is a full monospace cell, the same
+# width as the gap between words, so the icon floated instead of binding to
+# its value. Pango letter_spacing is ignored in these labels (GTK's CSS
+# letter-spacing wins), but a space scaled with `size` does take effect.
+# Keep this identical across every bar script — it is a consistency rule.
+GAP="<span size='8704'> </span>"
+
 ICON_NONE="󰂜"   # nf-md-bell-outline
 ICON_SOME="󰂚"   # nf-md-bell
 ICON_DND="󰂛"    # nf-md-bell-off
@@ -26,14 +33,14 @@ modes=$(makoctl mode 2>/dev/null || true)
 
 if grep -qx 'do-not-disturb' <<<"$modes"; then
     text="$ICON_DND"
-    (( count > 0 )) && text="$ICON_DND $count"
+    (( count > 0 )) && text="${ICON_DND}${GAP}${count}"
     printf '{"text":"%s","tooltip":"Do not disturb — %d waiting","class":"dnd"}\n' \
         "$text" "$count"
     exit 0
 fi
 
 if (( count > 0 )); then
-    printf '{"text":"%s %d","tooltip":"%d notification(s)","class":"unread"}\n' \
+    printf '{"text":"%s<span size='8704'> </span>%d","tooltip":"%d notification(s)","class":"unread"}\n' \
         "$ICON_SOME" "$count" "$count"
 else
     printf '{"text":"%s","tooltip":"No notifications","class":"none"}\n' \

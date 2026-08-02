@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
+# Icon-to-value gap. A literal space is a full monospace cell, the same
+# width as the gap between words, so the icon floated instead of binding to
+# its value. Pango letter_spacing is ignored in these labels (GTK's CSS
+# letter-spacing wins), but a space scaled with `size` does take effect.
+# Keep this identical across every bar script — it is a consistency rule.
+GAP="<span size='8704'> </span>"
+
 # Weather with local °F 
 
-# Get a free API key at https://openweathermap.org/api
-API_KEY="${OPENWEATHER_API_KEY:-your-api-key-here}"
-# Set your city, e.g. "London, UK" or "New York, US"
-CITY="${OPENWEATHER_CITY:-your-city-here}"
+source "${HOME}/.config/waybar/weather.env"
+API_KEY="${OPENWEATHER_API_KEY}"
+CITY="Falls Church, US"
 
 ###############################################################################
 # fetch once in °F
@@ -15,7 +21,7 @@ weather=$(curl -sf \
   --data-urlencode "q=$CITY" \
   --data-urlencode "appid=$API_KEY" \
   --data-urlencode "units=imperial"
-) || { echo " Weather"; exit 1; }
+) || { echo "󰀦${GAP}Weather"; exit 1; }
 
 temp_f=$(jq '.main.temp' <<<"$weather")
 desc=$(jq -r '.weather[0].main' <<<"$weather")
@@ -37,4 +43,4 @@ esac
 temp=$(awk "BEGIN{printf \"%.0f\", $temp_f}")
 symbol="°F"
 
-echo "$icon ${temp}${symbol}"
+echo "${icon}${GAP}${temp}${symbol}"

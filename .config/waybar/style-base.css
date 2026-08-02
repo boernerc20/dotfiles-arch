@@ -68,43 +68,68 @@ window#waybar {
 #clock,
 #privacy,
 #workspaces {
-  background-color: alpha(@background, 0.72);
-  border: 1px solid alpha(@color4, 0.30);
+  background-color: alpha(@background, 0.62);
+  border: 1px solid alpha(@color4, 0.45);
   /* Clipped diagonal corners — the "plating" cue. */
   border-radius: 4px 14px 4px 14px;
   margin: 6px 3px;
-  padding: 0 15px;
+  padding: 0 14px;
   color: @foreground;
-  box-shadow: 0 0 10px alpha(@background, 0.55);
+  letter-spacing: 0.4px;
+  /* The pill is defined by its EDGE, not by its mass.
+     This used to be `0 0 10px alpha(@background, 0.55)` — a DARK halo with no
+     offset. Since @background is clamped near-black regardless of wallpaper,
+     it was invisible on dark images and a grey rectangular smudge on light
+     ones; worse, at 10px blur the halos of adjacent pills met across the 6px
+     gap and fused into one dark ribbon with slightly lighter pills sitting on
+     it. That fused ribbon is what read as "square".
+     Now: a 1px inset top highlight so the rim catches light, and a small
+     OFFSET shadow. Offset reads as depth; a symmetric blur reads as a halo,
+     and a halo is what goes square when the geometry is only 4/14px round. */
+  box-shadow: inset 0 1px 0 alpha(@foreground, 0.07),
+              0 2px 5px alpha(@background, 0.38);
 }
+
+/* CONSISTENCY RULE — read before adding a module.
+   The plate above is the whole chassis: every pill gets the same padding,
+   letter-spacing, border hue/alpha and drop shadow. Per-module blocks below
+   set ONLY `color` and `text-shadow`, so identity is carried by the glyph
+   colour and nothing else.
+
+   This replaced a set of hand-tuned overrides where padding ranged 12-19px,
+   letter-spacing 0-1.1px and border alpha 0.30-0.60. Individually each looked
+   deliberate; side by side the pills read as different components, because
+   some had visibly brighter frames and wider gutters than their neighbours.
+
+   Only two things may vary, and both are load-bearing:
+     * font-size, which has exactly two values — 15px for text, 17px for
+       icon-only pills, since a lone glyph at text size reads as undersized.
+     * the state rules at the bottom (pending / unread / muted / disconnected
+       / urgent), where a brighter frame IS the signal. */
 
 /* ── Accent per module, with matching bloom ──────────────────────────────── */
 #custom-distro {
   color: @color4;
-  font-size: 19px;
-  padding: 0 17px;
-  border-color: alpha(@color4, 0.55);
+  font-size: 17px;
   text-shadow: 0 0 7px alpha(@color4, 0.85);
-  box-shadow: 0 0 12px alpha(@color4, 0.28);
 }
 
 #custom-hardware {
   color: @color6;
-  letter-spacing: 0.6px;
-  border-color: alpha(@color6, 0.38);
   text-shadow: 0 0 6px alpha(@color6, 0.55);
 }
 
 #pulseaudio {
   color: @color5;
-  border-color: alpha(@color5, 0.38);
   text-shadow: 0 0 6px alpha(@color5, 0.55);
 }
 
+/* No font-style here on purpose. The italic now lives in config.jsonc as
+   <i>{title}</i>, so only the song name slants — a module-level italic also
+   slanted the note glyph and the artist, which made the pill look like a
+   different typeface rather than like emphasis. */
 #mpris {
   color: @color6;
-  font-style: italic;
-  border-color: alpha(@color6, 0.32);
   text-shadow: 0 0 6px alpha(@color6, 0.45);
 }
 
@@ -116,9 +141,7 @@ window#waybar {
 #custom-network {
   color: @color6;
   letter-spacing: 0;
-  padding: 0 13px;
-  font-size: 16px;
-  border-color: alpha(@color6, 0.38);
+  font-size: 17px;
   text-shadow: 0 0 5px alpha(@color6, 0.35);
 }
 
@@ -131,45 +154,41 @@ window#waybar {
 #custom-network-bluetooth {
   color: @color5;
   font-size: 17px;
-  border-color: alpha(@color5, 0.34);
   text-shadow: 0 0 6px alpha(@color5, 0.45);
 }
 
 #custom-weather {
   color: @color3;
-  border-color: alpha(@color3, 0.34);
   text-shadow: 0 0 6px alpha(@color3, 0.45);
 }
 
+/* Date and time in one pill. No bold and no wider tracking any more: the clock
+   used to be the one module running a different weight, spacing and padding
+   from everything else, which is exactly the mismatch this pass removed.
+   Prominence now comes from hue and glow alone — @color4 with the strongest
+   text-shadow on the bar — and the date recedes via Pango alpha in the format
+   string, so the whole pill stays one typeface at one size. */
 #clock {
   color: @color4;
-  font-weight: bold;
-  letter-spacing: 1.1px;
-  padding: 0 19px;
-  border-color: alpha(@color4, 0.55);
   text-shadow: 0 0 9px alpha(@color4, 0.80);
-  box-shadow: 0 0 14px alpha(@color4, 0.24);
 }
 
 /* ── Disk ────────────────────────────────────────────────────────────────── */
 #disk {
   color: @color6;
-  letter-spacing: 0.4px;
-  border-color: alpha(@color6, 0.34);
   text-shadow: 0 0 6px alpha(@color6, 0.45);
 }
 
-/* ── Utility cluster — square-ish icon buttons ───────────────────────────── */
-/* Narrower padding so these read as a group of controls rather than as
-   readouts, without breaking the shared plate geometry. */
+/* ── Utility cluster — icon-only buttons ─────────────────────────────────── */
+/* 17px is the icon size used everywhere on the bar. These keep the shared
+   padding: the old 12px made them narrower than their neighbours, which is
+   the kind of near-miss that reads as sloppy rather than as grouping. */
 #custom-cliphist,
 #custom-notification,
 #custom-updates,
 #privacy {
   font-size: 17px;
-  padding: 0 12px;
   color: @color6;
-  border-color: alpha(@color6, 0.30);
   text-shadow: 0 0 6px alpha(@color6, 0.45);
 }
 
@@ -190,7 +209,6 @@ window#waybar {
    utility icons is what has to carry it. Up-to-date recedes almost fully. */
 #custom-updates.pending {
   color: @color3;
-  letter-spacing: 0.5px;
   border-color: alpha(@color3, 0.55);
   text-shadow: 0 0 8px alpha(@color3, 0.70);
   box-shadow: 0 0 13px alpha(@color3, 0.25);
@@ -231,9 +249,11 @@ window#waybar {
 }
 
 /* ── Workspaces — real numbers, unmistakable active state ────────────────── */
+/* The container is the one pill that may run tighter padding: its children
+   carry their own, so the shared 14px would sit on top of the buttons' 10px
+   and push the group visibly wider than every other module. */
 #workspaces {
   padding: 0 6px;
-  border-color: alpha(@color4, 0.34);
 }
 
 #workspaces button {
@@ -242,7 +262,6 @@ window#waybar {
   box-shadow: none;
   color: alpha(@foreground, 0.38);
   font-size: 15px;
-  font-weight: bold;
   min-width: 30px;
   padding: 0 10px;
   margin: 5px 3px;

@@ -38,7 +38,23 @@ SOURCES = [CONFIG_DIR / "config.jsonc"] + sorted(
 )
 
 # Codepoints that are ordinary typography, not icons — ignore them.
-IGNORE = set("─━—–…’“”°·•→")
+IGNORE = set("─━—–…’“”°·•→│")
+
+# The BMP Private Use Area. Glyphs here (Font Awesome, Devicons, nf-weather,
+# nf-linux) render fine, so a cmap check alone passes them — but this is
+# precisely the range that has been silently stripped from these files in
+# transit, leaving empty strings behind. nf-md lives above U+F0000 and has
+# always survived.
+BMP_PUA = (0xE000, 0xF8FF)
+
+# ...but the rule can only be ENFORCED where an nf-md equivalent exists.
+# distro_icon.sh needs nf-linux distro logos and weather.sh needs nf-weather
+# condition icons; neither set has an nf-md counterpart, so failing on them
+# would mean a guard that cries wolf 29 times and gets ignored — which is
+# worse than no guard. PUA use is therefore an ERROR in config.jsonc, the file
+# that actually suffered the corruption and where nf-md alternatives exist,
+# and a NOTE everywhere else.
+PUA_ENFORCED = {"config.jsonc"}
 
 
 def font_cmap(path):
@@ -88,6 +104,7 @@ def main():
     cmap = font_cmap(FONT)
     missing = []
     empties = []
+    risky = []
 
     for src in SOURCES:
         if not src.exists():
@@ -98,14 +115,30 @@ def main():
             if ord(ch) > 0x2000 and ch not in IGNORE:
                 if ord(ch) not in cmap:
                     missing.append((src.name, ch))
+                elif BMP_PUA[0] <= ord(ch) <= BMP_PUA[1]:
+                    risky.append((src.name, ch))
 
     for problem in empties:
         print(f"EMPTY  {problem}")
     for name, ch in sorted(set(missing), key=lambda x: ord(x[1])):
         print(f"TOFU   {name}: U+{ord(ch):04X} not in {FONT.name}")
+    fatal_pua = {(n, c) for n, c in risky if n in PUA_ENFORCED}
+    noted_pua = {(n, c) for n, c in risky} - fatal_pua
 
-    if empties or missing:
-        print(f"\nFAIL — {len(empties)} empty icon(s), {len(set(missing))} missing glyph(s)")
+    for name, ch in sorted(fatal_pua, key=lambda x: ord(x[1])):
+        print(f"PUA    {name}: U+{ord(ch):04X} is in the BMP Private Use Area — "
+              f"use an nf-md glyph (U+F0000+) instead")
+    if noted_pua:
+        by_file = {}
+        for name, ch in noted_pua:
+            by_file.setdefault(name, []).append(ch)
+        summary = ", ".join(f"{n} ({len(v)})" for n, v in sorted(by_file.items()))
+        print(f"note   PUA glyphs with no nf-md equivalent: {summary}")
+
+    if empties or missing or fatal_pua:
+        print(f"\nFAIL — {len(empties)} empty icon(s), "
+              f"{len(set(missing))} missing glyph(s), "
+              f"{len(fatal_pua)} PUA glyph(s) in {'/'.join(sorted(PUA_ENFORCED))}")
         return 1
 
     total = sum(
