@@ -55,3 +55,8 @@ __pycache__/
 TODO.md
 NOTES.md
 scratch/
+
+# Wallpapers are personal and large (60MB+). install.sh degrades gracefully
+# when this directory is absent — see its "Generating initial colours" step,
+# which warns and tells you to run wal-hypr.sh once you have supplied one.
+wallpapers/
