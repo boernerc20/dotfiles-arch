@@ -377,8 +377,13 @@ if [[ ! -f "$ZSHRC_LOCAL" ]]; then
 # export __GL_VRR_ALLOWED=1
 # export WLR_NO_HARDWARE_CURSORS=1
 
-# Home Assistant token:
-# export HOME_ASSISTANT_TOKEN="your_token_here"
+# Secrets (API keys, tokens) do NOT belong here — .zshrc.local is a sibling of
+# tracked files and this is exactly how a Home Assistant token and an
+# OpenWeatherMap key ended up public in this repo for four months.
+# Put them in ~/.config/shell/secrets.env instead, which *.env gitignores:
+#   cp .config/shell/secrets.env.example ~/.config/shell/secrets.env
+#   chmod 600 ~/.config/shell/secrets.env
+# ~/.zshrc sources it automatically when present.
 
 # Jarvis-only aliases (add back on jarvis):
 # alias gotop='gotop --nvidia -s -a -p'
