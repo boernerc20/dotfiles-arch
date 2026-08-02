@@ -15,10 +15,16 @@ PYWAL_THEME="/home/chris/.cache/wal/yazi-theme.toml"
 YAZI_THEME_DIR="/home/chris/.config/yazi"
 YAZI_THEME="${YAZI_THEME_DIR}/theme.toml"
 
-# Check if pywal theme was generated
+# Check the theme was generated.
+#
+# The path still says "wal" because wallust deliberately renders into pywal's
+# old cache paths, which is what let ~14 consumers survive the migration
+# untouched. pywal itself is GONE — uninstalled 2026-08-02 — so the old advice
+# here ("run wal -i") now names a binary that does not exist and would send you
+# looking for the wrong tool.
 if [[ ! -f "$PYWAL_THEME" ]]; then
-    echo -e "${YELLOW}Warning: Pywal theme not found at $PYWAL_THEME${NC}"
-    echo "Run 'wal -i <wallpaper>' to generate it"
+    echo -e "${YELLOW}Warning: theme not found at $PYWAL_THEME${NC}"
+    echo "Regenerate it with: wal-hypr.sh <wallpaper>   (wallust renders it)"
     exit 1
 fi
 

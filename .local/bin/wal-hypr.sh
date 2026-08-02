@@ -23,9 +23,11 @@ fi
 # kitty, rofi, cava, yazi, firefox, ~/.config/wal/postrun — is unchanged.
 # Config: ~/.config/wallust/wallust.toml
 #
-# Do NOT put `wal -i` back here. pywal and wallust write the same paths, so a
-# stray `wal -i` silently reverts the whole system to the old engine on the
-# next wallpaper change.
+# python-pywal was UNINSTALLED on 2026-08-02, which closes this off for good:
+# both engines wrote the same paths, so a single stray `wal -i` used to revert
+# the whole system to the dead engine on the next wallpaper change. With the
+# package gone that command now just fails. Do not reinstall it to "fix" a
+# theming problem — the paths are wallust's now.
 if command -v wallust &>/dev/null; then
     wallust run -q "$WP"
 else

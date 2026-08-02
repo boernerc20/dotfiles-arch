@@ -47,11 +47,19 @@ check_contrast = true
 # every one of those consumers.
 #
 # wallust's own terminal-sequence emission (~/.cache/wallust/sequences) is
-# handled separately by wallust itself, not a template — see
-# ~/.local/bin/wallust-switchover, which repoints the one consumer of the
-# old ~/.cache/wal/sequences file after a successful verified cutover.
+# handled separately by wallust itself, not a template. Note this is the ONE
+# path that is not pywal-compatible: pywal wrote ~/.cache/wal/sequences, and
+# the consumer in conf.d/04-autostart.conf was repointed during the cutover.
+#
+# The wallust-switchover script that performed that cutover has been deleted —
+# it existed to migrate off pywal with automatic rollback, and python-pywal was
+# uninstalled on 2026-08-02, so there is nothing left to roll back to.
 
 [templates]
+# NOTE: there is deliberately no qt6ct template. ~/.config/wal/postrun computes
+# and writes ~/.cache/wal/colors-qt6ct.conf itself, and wallust runs postrun
+# AFTER rendering — so a template targeting that path was overwritten on every
+# single run. Same for the rofi power/dark themes: nothing read their output.
 
 colors_json = { template = "colors.json", target = "~/.cache/wal/colors.json" }
 colors_sh = { template = "colors.sh", target = "~/.cache/wal/colors.sh" }
@@ -59,12 +67,9 @@ colors_kitty = { template = "colors-kitty.conf", target = "~/.cache/wal/colors-k
 colors_waybar = { template = "colors-waybar.css", target = "~/.cache/wal/colors-waybar.css" }
 colors_css = { template = "colors.css", target = "~/.cache/wal/colors.css" }
 colors_rofi = { template = "colors-rofi.rasi", target = "~/.cache/wal/colors-rofi.rasi" }
-colors_rofi_power = { template = "colors-rofi-power.rasi", target = "~/.cache/wal/colors-rofi-power.rasi" }
-colors_rofi_dark = { template = "colors-rofi-dark.rasi", target = "~/.cache/wal/colors-rofi-dark.rasi" }
 hyprlock = { template = "hyprlock.conf", target = "~/.cache/wal/hyprlock.conf" }
 cava = { template = "config.cava", target = "~/.cache/wal/config.cava" }
 yazi = { template = "yazi-theme.toml", target = "~/.cache/wal/yazi-theme.toml" }
-qt6ct = { template = "colors-qt6ct.conf", target = "~/.cache/wal/colors-qt6ct.conf" }
 nvim = { template = "colors-wal.vim", target = "~/.cache/wal/colors-wal.vim" }
 mako = { template = "mako-config", target = "~/.cache/wal/mako-config" }
 hypr_colors = { template = "hypr-colors.conf", target = "~/.cache/wal/hypr-colors.conf" }
