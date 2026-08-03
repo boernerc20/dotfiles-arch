@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# sync-startpage — mirror the Firefox start page to truenas.
+#
+# truenas serves ~/.config/firefox/home over Tailscale on :8081 via an nginx
+# container, so phones and other machines get the same page as this desktop.
+#
+# WHY THIS EXISTS
+# ---------------
+# The mirror was set up by hand on 2026-06-05 and then never updated. By August
+# it was serving pre-redesign markup with a palette frozen at whatever the
+# wallpaper had been that day, no surfaces.css at all, and no backdrop. Nothing
+# in the dotfiles knew it existed, so nothing kept it honest. wal-hypr.sh now
+# calls this on every wallpaper change.
+#
+# FAILS SOFT, ALWAYS
+# ------------------
+# This runs as part of the theme switch. A NAS that is asleep, rebooting, or off
+# the tailnet must never leave the local desktop half-themed, so every failure
+# path returns 0 under --quiet and the remote copy simply stays one wallpaper
+# behind until the next switch. Run it without --quiet to see what went wrong.
+#
+# Usage:
+#   sync-startpage           push, report what happened
+#   sync-startpage --quiet   push, stay silent unless it is an interactive fix
+#   sync-startpage --check   report readiness and diff, push nothing
+
+set -uo pipefail
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+
+SRC="$HOME/.config/firefox/home"
+HOST="nas"                       # ~/.ssh/config: truenas_admin@192.168.1.20
+DEST="/mnt/tank/docker/firefox-homepage/html"
+URL="http://100.87.245.19:8081"  # tailscale address, for the post-push check
+
+QUIET=0
+CHECK=0
+case "${1:-}" in
+    --quiet) QUIET=1 ;;
+    --check) CHECK=1 ;;
+esac
+
+say()  { (( QUIET )) || echo -e "$*"; }
+warn() { (( QUIET )) || echo -e "${YELLOW}$*${NC}" >&2; }
+
+# Only these. Notably NOT serve.py — that is the local Python server and has no
+# business on a box running nginx — and not any dotfile or editor scratch.
+FILES=(index.html style.css time.js colors.css surfaces.css wallpaper.jpg)
+
+if [[ ! -d "$SRC" ]]; then
+    warn "no start page at $SRC"; exit 0
+fi
+
+missing=()
+for f in "${FILES[@]}"; do [[ -e "$SRC/$f" ]] || missing+=("$f"); done
+if (( ${#missing[@]} )); then
+    warn "not pushing, missing locally: ${missing[*]}"
+    (( CHECK )) || exit 0
+fi
+
+if (( CHECK )); then
+    echo "  source : $SRC"
+    echo "  target : $HOST:$DEST"
+    for f in "${FILES[@]}"; do
+        printf "  %-14s %s\n" "$f" "$([[ -e $SRC/$f ]] && stat -Lc '%s bytes' "$SRC/$f" || echo MISSING)"
+    done
+    echo -n "  ssh    : "
+    if timeout 8 ssh -o BatchMode=yes -o ConnectTimeout=5 "$HOST" true 2>/dev/null; then
+        echo -e "${GREEN}reachable${NC}"
+        echo -n "  write  : "
+        if timeout 8 ssh -o BatchMode=yes "$HOST" "touch $DEST/.probe && rm -f $DEST/.probe" 2>/dev/null; then
+            echo -e "${GREEN}yes${NC}"
+        else
+            echo -e "${RED}NO — $DEST is not writable by the ssh user${NC}"
+        fi
+    else
+        echo -e "${RED}unreachable${NC}"
+    fi
+    exit 0
+fi
+
+# -L/--copy-links: colors.css and surfaces.css are symlinks into ~/.cache/wal.
+# Without this rsync mirrors the links themselves, which resolve to nothing on
+# the far side and leave the page unstyled.
+if ! out=$(cd "$SRC" && timeout 60 rsync -aL --no-perms --no-owner --no-group \
+        -e 'ssh -o BatchMode=yes -o ConnectTimeout=5' \
+        "${FILES[@]}" icons "$HOST:$DEST/" 2>&1); then
+    warn "start page sync failed: ${out##*$'\n'}"
+    exit 0
+fi
+
+say "${GREEN}start page synced to $HOST${NC}"
+
+# Confirm the mirror actually serves what we just pushed, rather than assuming
+# the copy landed. Cheap, and it catches a container serving a stale bind mount.
+if (( ! QUIET )); then
+    remote_bg=$(timeout 8 curl -s "$URL/colors.css" 2>/dev/null | grep -oP '(?<=--background: )[^;]+')
+    local_bg=$(grep -oP '(?<=--background: )[^;]+' "$HOME/.cache/wal/colors.css" 2>/dev/null)
+    if [[ -n "$remote_bg" && "$remote_bg" == "$local_bg" ]]; then
+        echo -e "${GREEN}verified${NC} — $URL is serving the current palette ($remote_bg)"
+    elif [[ -n "$remote_bg" ]]; then
+        echo -e "${YELLOW}pushed, but $URL still reports $remote_bg (local $local_bg)${NC}"
+    else
+        echo -e "${YELLOW}pushed, but could not read $URL to verify${NC}"
+    fi
+fi

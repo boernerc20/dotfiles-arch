@@ -102,12 +102,48 @@ fi
 # and is what keeps the start page on the same background as native apps. If it
 # is missing the page silently falls back to whatever colors.css provides, so
 # the link is re-established every run rather than only at install time.
-if [ -d "$HOME/.config/firefox/home" ]; then
+HOMEPAGE="$HOME/.config/firefox/home"
+
+if [ -d "$HOMEPAGE" ]; then
     for sheet in colors.css surfaces.css; do
         if [ -e "$HOME/.cache/wal/$sheet" ]; then
-            ln -sfn "$HOME/.cache/wal/$sheet" "$HOME/.config/firefox/home/$sheet"
+            ln -sfn "$HOME/.cache/wal/$sheet" "$HOMEPAGE/$sheet"
         fi
     done
+
+    # 7a) Normalised backdrop image.
+    #
+    # The page used to fetch a /wallpaper route from serve.py that resolved
+    # ~/.current_wallpaper per request. That worked locally and was untranslatable
+    # to the nginx copy on truenas, which has no such route — so the mirrored
+    # start page could never show a backdrop at all.
+    #
+    # A plain file both servers can serve is simpler and removes the route
+    # entirely. Downscaled and re-encoded because the source is often 4-6MB of
+    # PNG and it sits behind a 22px blur: at 1920px wide and q82 it is visually
+    # identical, roughly 20x smaller, and that matters when a phone loads it over
+    # Tailscale.
+    if command -v magick &>/dev/null; then
+        magick "$WP" -resize 1920x -quality 82 -strip "$HOMEPAGE/wallpaper.jpg" 2>/dev/null \
+            || echo "Warning: could not build homepage backdrop from $WP" >&2
+    fi
+
+    # 7b) Mirror the page to truenas, which serves it over Tailscale on :8081 so
+    # phones and other machines get the same start page, re-themed in step with
+    # this desktop. Before this existed the mirror was a frozen copy from
+    # 2026-06-05: wrong palette, no surfaces.css, no backdrop.
+    #
+    # --copy-links because colors.css and surfaces.css are symlinks into
+    # ~/.cache/wal; rsync would otherwise mirror dangling links that resolve to
+    # nothing on the far side.
+    #
+    # EVERY failure here is non-fatal and silent-ish by design. This runs on every
+    # wallpaper change, so a NAS that is asleep, rebooting or off the tailnet must
+    # never leave the local desktop half-themed — the remote copy simply stays one
+    # wallpaper behind until the next switch.
+    if [ -x "$HOME/.local/bin/sync-startpage" ]; then
+        "$HOME/.local/bin/sync-startpage" --quiet || true
+    fi
 fi
 
 # 8) Set rofi — symlink current wallpaper for the template's background-image,

@@ -53,18 +53,21 @@ body {
 }
 
 /* ── Backdrop ───────────────────────────────────────────────────────────────
-   /wallpaper is a route in serve.py that resolves ~/.current_wallpaper per
-   request, so this follows Super+W with no restart. It is deliberately NOT
-   var(--wallpaper): that holds an absolute filesystem path, which over
-   http://localhost resolves against the server root and 404s every time.
+   wallpaper.jpg is written by wal-hypr.sh on every wallpaper change: the source
+   downscaled to 1920px and re-encoded at q82. It is a plain file rather than a
+   dynamic route so the nginx mirror on truenas can serve the identical page —
+   the old /wallpaper route only existed in serve.py and 404'd there, which is
+   why the mirrored copy never had a backdrop.
 
-   Dimmed hard and blurred, the way hyprlock treats the same image. The page has
-   to stay readable on a pale wallpaper, and the type must never compete with
-   the picture. */
+   Deliberately NOT var(--wallpaper): that holds an absolute filesystem path,
+   which over http:// resolves against the server root and 404s everywhere.
+
+   Dimmed and blurred the way hyprlock treats the same image. The page must stay
+   readable on a pale wallpaper, and the type must never compete with it. */
 .backdrop {
   position: fixed;
   inset: -40px;
-  background: var(--app-bg) url("wallpaper") center / cover no-repeat;
+  background: var(--app-bg) url("wallpaper.jpg") center / cover no-repeat;
   filter: blur(22px) brightness(0.40) saturate(1.15);
   z-index: -1;
 }
