@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# --no-battery: skip the battery branch of the fourth field even if a battery
+# is present. For a machine whose waybar config already has a dedicated
+# "battery" module (see config-laptop.jsonc), the same percentage in TWO pills
+# reads as a mistake rather than a feature; this flag lets that config ask for
+# CPU/MEM/TEMP only and get it without a second fork of this script.
+SUPPRESS_BATTERY=0
+[[ "${1:-}" == "--no-battery" ]] && SUPPRESS_BATTERY=1
+
 # ─── Icons ─────────────────────────────────────────────────────────────────────
 cpu_icon=""
 mem_icon=""
@@ -75,7 +83,7 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi --query-gpu=power.draw --form
   fourth_icon="$gpu_icon"
   fourth_value="$gpu_power"
   fourth_unit="W"
-elif [[ -r /sys/class/power_supply/BAT0/capacity ]]; then
+elif [[ "$SUPPRESS_BATTERY" -eq 0 && -r /sys/class/power_supply/BAT0/capacity ]]; then
   bat_capacity=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null)
   bat_status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null)
   fourth_icon="$bat_full_icon"

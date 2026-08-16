@@ -14,6 +14,11 @@ fi
 case "$ID" in
   ubuntu)     icon=" " ;;  # Ubuntu
   arch)       icon=" " ;;  # Arch Linux
+  endeavouros) icon=" " ;;  # EndeavourOS is Arch-based; nf-linux has
+                               # no dedicated glyph for it, so this reuses
+                               # Arch's. The $ID_LIKE fallback below covers
+                               # any OTHER Arch derivative the same way —
+                               # this explicit case just documents why.
   fedora)     icon=" " ;;  # Fedora
   debian)     icon=" " ;;  # Debian
   manjaro)    icon=" " ;;  # Manjaro
@@ -22,10 +27,21 @@ case "$ID" in
   void)       icon=" " ;;  # Void Linux
   alpine)     icon=" " ;;  # Alpine
   gentoo)     icon=" " ;;  # Gentoo
-  void)       icon=" " ;;  # Void
   rocky)      icon=" " ;;  # Rocky Linux (use same as RHEL)
   rhel)       icon=" " ;;  # RHEL
-  *)          icon=" " ;;  # unknown/fallback
+  *)
+    # No exact match on $ID — fall back to the FAMILY via $ID_LIKE before
+    # giving up on a real icon. This is what actually matters for
+    # portability: any future Arch/Debian/Fedora/SUSE derivative with its
+    # own $ID gets a sensible icon with no case-statement edit needed.
+    case "$ID_LIKE" in
+      *arch*)          icon=" " ;;
+      *debian*)        icon=" " ;;
+      *fedora*|*rhel*) icon=" " ;;
+      *suse*)          icon=" " ;;
+      *)               icon=" " ;;  # truly unknown
+    esac
+    ;;
 esac
 
 echo -e "$icon"

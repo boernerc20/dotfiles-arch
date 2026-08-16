@@ -63,13 +63,12 @@
     "on-click": "rofi -show drun -config ~/.config/rofi/colors-rofi.rasi"
   },
 
-  // hardware.sh auto-detects GPU vs battery for its fourth field — on this
-  // machine that's the battery, which duplicates the "battery" module below.
-  // Kept anyway for consistency with the desktop bar's look; if that reads as
-  // too redundant in practice, drop the "battery" module below instead of
-  // this one, since hardware.sh's reading sits in the same pill as CPU/MEM/TEMP.
+  // --no-battery: this machine's fourth field would be battery percentage
+  // (hardware.sh auto-detects it, same as the desktop's GPU field), which
+  // would duplicate the dedicated "battery" module below. hardware.sh here
+  // reports CPU/MEM/TEMP only.
   "custom/hardware": {
-    "exec": "~/.config/waybar/scripts/hardware.sh",
+    "exec": "~/.config/waybar/scripts/hardware.sh --no-battery",
     "interval": 5,
     "format": "{}",
     "tooltip": false

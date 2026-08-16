@@ -11,16 +11,34 @@
 # each carrying its own hardware check.
 set -uo pipefail
 
+# On-screen bubble, matching monitor-brightness's own notify-send call for the
+# DDC/CI path below — without this the laptop path changed the backlight with
+# no on-screen feedback at all, unlike every other machine.
+#
+# -h string:x-canonical-private-synchronous:brightness makes mako REPLACE the
+# existing bubble in place rather than stacking a new one per keypress; same
+# hint monitor-brightness uses, so both paths behave identically.
+notify() {
+    command -v notify-send >/dev/null || return 0
+    notify-send -u low -t 1500 \
+        -h string:x-canonical-private-synchronous:brightness \
+        -h "int:value:$1" "Brightness: $1%" 2>/dev/null || true
+}
+
 if [[ -n "$(ls -A /sys/class/backlight/ 2>/dev/null)" ]]; then
     STEP=10
     case "${1:-}" in
-        up)   brightnessctl set "${STEP}%+" -q ;;
-        down) brightnessctl set "${STEP}%-" -q ;;
+        up)   brightnessctl set "${STEP}%+" -q
+              notify "$(brightnessctl -m | awk -F, '{print $4}' | tr -d '%')" ;;
+        down) brightnessctl set "${STEP}%-" -q
+              notify "$(brightnessctl -m | awk -F, '{print $4}' | tr -d '%')" ;;
         set)  [[ "${2:-}" =~ ^[0-9]+$ ]] || { echo "usage: brightness set <0-100>" >&2; exit 1; }
-              brightnessctl set "${2}%" -q ;;
+              brightnessctl set "${2}%" -q
+              notify "$2" ;;
         get)  brightnessctl -m | awk -F, '{print $4}' | tr -d '%' ;;
         *)    echo "brightness up|down|set <0-100>|get  (laptop panel via brightnessctl)" ;;
     esac
 else
+    # monitor-brightness sends its own notify-send bubble already.
     exec "$HOME/.local/bin/monitor-brightness" "${1:-}" "${2:-}"
 fi
