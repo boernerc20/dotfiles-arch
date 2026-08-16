@@ -354,6 +354,31 @@ if [[ ! -f "$P10K_EXPECTED" ]]; then
     fi
 fi
 
+# ── Python dev tooling: pyenv + uv ────────────────────────────
+# .zshrc_copy (deployed below) unconditionally sources both — a machine
+# without them errored on every new shell (pyenv: "command not found",
+# uv: "no such file" on ~/.local/bin/env). Neither is a pacman package:
+# pyenv installs itself as a git clone into ~/.pyenv via its own installer,
+# and uv's official installer drops the binary in ~/.local/bin and writes
+# ~/.local/bin/env as a PATH shim. Both installers are safe to re-run.
+section "Installing pyenv and uv"
+
+if [[ -d "$HOME/.pyenv" ]]; then
+    success "pyenv already installed"
+else
+    curl -fsSL https://pyenv.run | bash \
+        && success "pyenv installed" \
+        || warn "pyenv install failed — run manually: curl https://pyenv.run | bash"
+fi
+
+if command -v uv &>/dev/null || [[ -x "$HOME/.local/bin/uv" ]]; then
+    success "uv already installed"
+else
+    curl -LsSf https://astral.sh/uv/install.sh | sh \
+        && success "uv installed" \
+        || warn "uv install failed — run manually: curl -LsSf https://astral.sh/uv/install.sh | sh"
+fi
+
 # ── Clone dotfiles ───────────────────────────────────────────
 section "Cloning dotfiles"
 
