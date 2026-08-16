@@ -21,7 +21,10 @@
 
   "layer": "top",
   "position": "top",
-  "height": 42,
+  // 46, matching config.jsonc — waybar logs a warning and grows the bar anyway
+  // if given less than the modules' real minimum (45px: 6px margin + 17px
+  // icons per pill). This was set to 42 and threw exactly that warning.
+  "height": 46,
   "spacing": 6,
   "reload_style_on_change": true,
 
