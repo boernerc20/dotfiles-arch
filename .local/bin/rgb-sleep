@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# rgb-sleep — turn RGB off before suspend, restore it on resume.
+#
+# Invoked by /usr/lib/systemd/system-sleep/rgb-sleep (a symlink to this file).
+# systemd calls sleep hooks as:  <hook> pre|post  suspend|hibernate|...
+#
+# WHY THIS EXISTS
+# ---------------
+# Two separate problems.
+#
+#  1. THE RAM STAYED LIT WHEN SUSPENDED. This replaced an earlier hook,
+#     /usr/lib/systemd/system-sleep/openrgb.sh, which loaded saved OpenRGB
+#     profiles (-p OFF / -p DEFAULT). That hook RAN and reported "Profile
+#     loaded successfully" — it was not broken in any obvious way. The problem
+#     was the profile's CONTENTS: OFF.orp was saved on a previous build. Its
+#     device list holds an MSI Z390 GAMING PRO CARBON (MS-7B17, 162-byte
+#     protocol) and a QCK Prism mousepad, and has NO entry for the Kingston
+#     Fury DDR5 in this machine. OpenRGB happily applies a profile that simply
+#     says nothing about the RAM, so the RAM kept its colour.
+#
+#     The lesson worth keeping: a saved .orp is a snapshot of the hardware
+#     present when it was saved. It goes stale silently on a rebuild, and
+#     "Profile loaded successfully" is not evidence that any given device was
+#     addressed. This hook therefore issues DIRECT commands against whatever
+#     devices are present now, and never relies on a stored profile.
+#
+#  2. SUSPEND TOOK 90 SECONDS. msi-argb-refresh.timer re-asserts the JARGB
+#     colour every 30s (the board does not hold it reliably). Measured on
+#     2026-08-03, the timer fired at 23:45:22 and again at 23:45:52 while the
+#     system was trying to sleep — "Starting System Suspend" was logged at
+#     23:44:27 but "Performing sleep operation" only at 23:45:57. Each firing
+#     re-opened the HID device mid-transition. The pre-hook stops the timer
+#     first, and the post-hook starts it again.
+#
+# ORDER MATTERS: stop the timer BEFORE blacking out the lights, or a refresh
+# that is already in flight will helpfully turn the JARGB headers back on
+# immediately after we switch them off.
+#
+# The GPU is included. It is driven over the NVIDIA card's own i2c adapter,
+# which is independent of the nvidia-suspend path (all six nvidia-*.service
+# units are disabled on this machine), so writing to it here does not interact
+# with the driver's own save/restore.
+set -uo pipefail
+
+ACTION="${1:-}"     # pre | post
+MODE="${2:-}"       # suspend | hibernate | suspend-then-hibernate | hybrid-sleep
+
+LOG_TAG="rgb-sleep"
+log() { logger -t "$LOG_TAG" "$*"; }
+
+# The colour to restore on resume. Kept identical to the value baked into
+# msi-argb-refresh.service so the two cannot disagree — hot pink, RGB(255,105,180).
+COLOR="FF69B4"
+
+TIMER="msi-argb-refresh.timer"
+ARGB_SCRIPT="/home/chris/projects/linux/04-utilities/set_msi_argb.py"
+
+# openrgb needs a moment after a cold resume before the i2c/HID devices are
+# addressable again; without a retry the post-hook silently no-ops and the
+# lights stay dark until the 30s timer happens to fire.
+openrgb_try() {
+    local attempt
+    for attempt in 1 2 3; do
+        if timeout 20 openrgb "$@" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 2
+    done
+    return 1
+}
+
+case "$ACTION" in
+    pre)
+        # 1. Stop the refresh timer first — see ORDER MATTERS above.
+        systemctl stop "$TIMER" 2>/dev/null
+
+        # 2. All devices to black. --mode direct is required: in an effect mode
+        #    the controller keeps animating and ignores a static colour.
+        if openrgb_try --mode direct --color 000000; then
+            log "lights off before $MODE"
+        else
+            log "WARNING: could not turn lights off before $MODE"
+        fi
+        ;;
+
+    post)
+        # Restore colour. openrgb covers RAM, GPU and mouse.
+        if openrgb_try --mode direct --color "$COLOR"; then
+            log "lights restored after $MODE"
+        else
+            log "WARNING: could not restore lights after $MODE"
+        fi
+
+        # The MSI JARGB headers are NOT reliably driven by openrgb on this board
+        # (that is the entire reason set_msi_argb.py exists — it writes raw HID
+        # feature reports, bypassing OpenRGB's board-name whitelist). Set them
+        # explicitly, then hand back to the timer.
+        if [[ -x "$ARGB_SCRIPT" || -r "$ARGB_SCRIPT" ]]; then
+            python3 "$ARGB_SCRIPT" 255 105 180 >/dev/null 2>&1 \
+                || log "WARNING: set_msi_argb.py failed after $MODE"
+        fi
+
+        systemctl start "$TIMER" 2>/dev/null
+        log "refresh timer restarted after $MODE"
+        ;;
+esac
+
+exit 0

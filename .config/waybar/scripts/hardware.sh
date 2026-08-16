@@ -69,4 +69,37 @@ gpu_power=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits | aw
 # Keep this identical across every bar script — it is a consistency rule.
 GAP="<span size='8704'> </span>"
 
-echo "${cpu_icon}${GAP}${cpu}%  ${mem_icon}${GAP}${mem}%  ${gpu_icon}${GAP}${gpu_power}  ${temp_icon}${GAP}${temp}°C"
+# Field separator: a dim divider, matching the clock and mpris pills, which use
+# the same U+2502 (Box Drawing — deliberately NOT a Private Use Area glyph, see
+# the warning in config.jsonc). This replaced two plain spaces, which read as an
+# accidental gap and made the four readings look like four separate modules
+# crammed into one pill rather than one instrument.
+SEP="<span alpha='30%'>│</span>"
+
+# NO PADDING. An earlier version padded every value to its maximum digit count
+# so the pill could never resize. It worked — verified at a constant 318px — but
+# it made this pill far wider and more spaced-out than every other module on the
+# bar, which is a worse problem than the resize it fixed.
+#
+# The reference modules (pulseaudio, disk, weather) are all plainly
+# `icon + GAP + value` with no padding, and they simply accept the width change
+# as their numbers cross 9->10->100. This module now does the same. If the
+# jitter ever becomes intolerable, the fix is FEWER FIELDS, not padding: note
+# that CSS cannot help, since GTK implements min-width but not max-width.
+gpu_watts=${gpu_power%W}
+[[ "$gpu_watts" =~ ^[0-9]+$ ]] || gpu_watts=0
+[[ "$temp" =~ ^[0-9]+$ ]] || temp=0
+
+# Built by concatenation rather than one big printf format. The format-string
+# version was miscounted once already: "%s%s%s%%%s..." mixes literal %% in among
+# the conversions, printf ran out of arguments, and it silently RECYCLED the
+# format — emitting a stray "%%W°C" tail. Concatenation cannot drift this way.
+field() {   # icon, value, unit
+    printf '%s%s%s%s' "$1" "$GAP" "$2" "$3"
+}
+
+printf '%s %s %s %s %s %s %s\n' \
+  "$(field "$cpu_icon"  "$cpu"       '%')"  "$SEP" \
+  "$(field "$mem_icon"  "$mem"       '%')"  "$SEP" \
+  "$(field "$gpu_icon"  "$gpu_watts" 'W')"  "$SEP" \
+  "$(field "$temp_icon" "$temp"      '°C')"
