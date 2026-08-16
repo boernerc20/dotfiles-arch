@@ -298,7 +298,25 @@ if [[ -z "$(ls -A /sys/class/backlight/ 2>/dev/null)" ]]; then
     echo "    Verify with: ddcutil detect"
     echo "    If the monitor is not found, enable DDC/CI in its on-screen menu."
 else
-    echo "    Laptop backlight present — DDC/CI not needed, skipping."
+    echo "    Laptop backlight present — DDC/CI not needed, using brightnessctl."
+
+    # brightnessctl writes to /sys/class/backlight/*/brightness, which is
+    # root:root 0644 by default. Unlike ddcutil, this system's brightnessctl
+    # package ships NO udev rule granting group write on that node — confirmed
+    # empty on the machine this was written for (`pacman -Ql brightnessctl`
+    # has no udev entry), so without this step every brightness key silently
+    # fails with "Operation not permitted" and there is nothing else that
+    # would ever grant the access.
+    if getent group video >/dev/null; then
+        if id -nG "$USER" | grep -qw video; then
+            success "already in the video group"
+        else
+            sudo usermod -aG video "$USER"
+            success "added $USER to the video group (takes effect at next login)"
+        fi
+    else
+        warn "no video group — this system's brightnessctl may need a different fix"
+    fi
 fi
 
 # ── Default shell → zsh ──────────────────────────────────────

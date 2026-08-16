@@ -44,7 +44,6 @@
     "custom/weather",
     "custom/network",
     "custom/network-bluetooth",
-    "battery",
     "clock"
   ],
 
@@ -66,12 +65,12 @@
     "on-click": "rofi -show drun -config ~/.config/rofi/colors-rofi.rasi"
   },
 
-  // --no-battery: this machine's fourth field would be battery percentage
-  // (hardware.sh auto-detects it, same as the desktop's GPU field), which
-  // would duplicate the dedicated "battery" module below. hardware.sh here
-  // reports CPU/MEM/TEMP only.
+  // hardware.sh auto-detects the fourth field: GPU power draw on the desktop,
+  // battery percentage here (see its own header). No --no-battery flag — the
+  // battery reading lives in this pill alongside CPU/MEM/TEMP rather than as
+  // its own separate module on the right.
   "custom/hardware": {
-    "exec": "~/.config/waybar/scripts/hardware.sh --no-battery",
+    "exec": "~/.config/waybar/scripts/hardware.sh",
     "interval": 5,
     "format": "{}",
     "tooltip": false
