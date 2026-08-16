@@ -76,6 +76,11 @@ PKGS=(
     waybar
     hyprpaper
     hyprlock
+    # hypridle drives the idle lock, display-off, AND lock-on-suspend (via its
+    # before_sleep_cmd). Without it the machine suspends straight to an unlocked
+    # desktop — a systemd --user unit on sleep.target is NOT a substitute, since
+    # sleep.target does not exist in the user manager.
+    hypridle
     hyprshot
     wlogout
     xdg-desktop-portal-hyprland
@@ -112,7 +117,12 @@ PKGS=(
     python-fonttools          # waybar/scripts/verify-glyphs.py
 
     # System tools
-    brightnessctl
+    # ddcutil, NOT brightnessctl: the display is an external monitor (AW3418DW),
+    # so /sys/class/backlight/ is empty and brightnessctl has nothing to write
+    # to. Brightness goes over DDC/CI instead — see ~/.local/bin/monitor-brightness.
+    # brightnessctl is still worth installing on a LAPTOP; it is harmless here
+    # but was listed for years while the brightness keys silently did nothing.
+    ddcutil
     playerctl
     networkmanager
     network-manager-applet
@@ -226,6 +236,68 @@ fi
 sudo systemctl enable bluetooth
 
 success "Services enabled"
+
+# ── RGB off during suspend ───────────────────────────────────
+# systemd runs every executable in /usr/lib/systemd/system-sleep/ around a
+# sleep transition, as root, with "pre|post suspend". Symlinked rather than
+# copied so edits to the tracked script take effect without re-running this.
+#
+# This replaced an older openrgb.sh hook that loaded saved .orp profiles. That
+# hook ran and reported success, but its profiles were snapshots of a PREVIOUS
+# build and contained no entry for this machine's DDR5, so the RAM never went
+# dark. Direct commands are used instead — never a stored profile.
+section "Installing RGB sleep hook"
+
+if [[ -x "$HOME/.local/bin/rgb-sleep" ]]; then
+    sudo ln -sf "$HOME/.local/bin/rgb-sleep" /usr/lib/systemd/system-sleep/rgb-sleep
+    success "RGB sleep hook installed"
+
+    if [[ -e /usr/lib/systemd/system-sleep/openrgb.sh ]]; then
+        warn "an old openrgb.sh sleep hook is still present — the two will fight"
+        echo "    Review and remove it: /usr/lib/systemd/system-sleep/openrgb.sh"
+    fi
+else
+    warn "~/.local/bin/rgb-sleep missing — skipping sleep hook"
+fi
+
+# ── Monitor brightness over DDC/CI ───────────────────────────
+# Only relevant with an external monitor. ddcutil ships its own udev rule
+# creating the i2c group and setting /dev/i2c-* to root:i2c, so no custom rule
+# is needed — but the user still has to BE in that group. On a normal seat login
+# systemd-logind also grants an ACL on the node, which is why this worked before
+# a re-login on the machine it was developed on; the group is the fallback for
+# sessions that get no seat ACL (SSH, some greeters).
+section "Configuring DDC/CI monitor brightness"
+
+if [[ -z "$(ls -A /sys/class/backlight/ 2>/dev/null)" ]]; then
+    if getent group i2c >/dev/null; then
+        if id -nG "$USER" | grep -qw i2c; then
+            success "already in the i2c group"
+        else
+            sudo usermod -aG i2c "$USER"
+            success "added $USER to the i2c group (takes effect at next login)"
+        fi
+    else
+        warn "no i2c group — is ddcutil installed?"
+    fi
+
+    # Load now and at boot. Appended rather than overwritten: this machine's
+    # i2c.conf also carries i2c-i801 (Intel SMBus), and a blind `tee` of just
+    # i2c-dev would drop it.
+    if sudo modprobe i2c-dev 2>/dev/null; then
+        if grep -qsr "^i2c-dev$" /etc/modules-load.d/; then
+            success "i2c-dev already set to load at boot"
+        else
+            echo i2c-dev | sudo tee -a /etc/modules-load.d/i2c.conf >/dev/null
+            success "i2c-dev loaded and added to /etc/modules-load.d/i2c.conf"
+        fi
+    fi
+
+    echo "    Verify with: ddcutil detect"
+    echo "    If the monitor is not found, enable DDC/CI in its on-screen menu."
+else
+    echo "    Laptop backlight present — DDC/CI not needed, skipping."
+fi
 
 # ── Default shell → zsh ──────────────────────────────────────
 section "Setting zsh as default shell"
@@ -531,6 +603,40 @@ section "Setting up pywalfox"
 if command -v pywalfox &>/dev/null; then
     pywalfox install 2>/dev/null || warn "pywalfox install failed — run manually after opening Firefox once"
     success "pywalfox configured"
+fi
+
+# ── Firefox start page prefs ─────────────────────────────────
+# user.js sets the homepage to the truenas mirror. It cannot simply be copied to
+# a fixed path: Firefox generates a RANDOM profile directory name per machine
+# (e.g. zjiy2i9a.default-release-...), so the default profile has to be resolved
+# out of profiles.ini at install time.
+#
+# Firefox must have been launched at least once for the profile to exist, which
+# will not be true on a fresh box — hence the skip-with-instructions path rather
+# than a hard failure.
+section "Configuring Firefox start page"
+
+ff_ini="$HOME/.mozilla/firefox/profiles.ini"
+if [[ -f "$ff_ini" ]]; then
+    # Prefer the Install* section's Default= (an absolute-ish profile path,
+    # what Firefox actually launches) over any [ProfileN] Default=1, which is
+    # the legacy marker and frequently points at a stale unused profile.
+    ff_rel=$(awk -F= '/^\[Install/{ini=1;next} /^\[/{ini=0} ini&&$1=="Default"{print $2;exit}' "$ff_ini")
+    [[ -z "$ff_rel" ]] && ff_rel=$(awk -F= '
+        /^\[Profile/{p="";d=""} $1=="Path"{p=$2} $1=="Default"&&$2=="1"{d=1}
+        p&&d{print p;exit}' "$ff_ini")
+
+    ff_profile="$HOME/.mozilla/firefox/$ff_rel"
+    if [[ -n "$ff_rel" && -d "$ff_profile" ]]; then
+        cp "$DOTFILES_DIR/.config/firefox/user.js" "$ff_profile/user.js"
+        success "Firefox start page configured ($ff_rel)"
+    else
+        warn "Firefox profile not found — launch Firefox once, then copy:"
+        echo "    cp $DOTFILES_DIR/.config/firefox/user.js ~/.mozilla/firefox/<profile>/user.js"
+    fi
+else
+    warn "Firefox has never been run — launch it once, then copy:"
+    echo "    cp $DOTFILES_DIR/.config/firefox/user.js ~/.mozilla/firefox/<profile>/user.js"
 fi
 
 # ── Done ─────────────────────────────────────────────────────

@@ -56,6 +56,7 @@ window#waybar {
 /* ── Base plate shared by every module ───────────────────────────────────── */
 #custom-distro,
 #custom-hardware,
+#custom-brightness,
 #custom-weather,
 #custom-network-bluetooth,
 #custom-cliphist,
@@ -114,9 +115,29 @@ window#waybar {
   text-shadow: 0 0 7px alpha(@color4, 0.85);
 }
 
+/* No min-width on either module below, deliberately.
+   Both were briefly given a fixed width (and hardware.sh padded its values) to
+   stop the pill resizing as cpu/mem crossed 9->10->100 and gpu power ran
+   6W->314W. It did stop the resize, but it made both pills conspicuously wider
+   and more spaced-out than pulseaudio, disk and weather — which are the
+   reference for what a module here looks like, and which pad nothing and are
+   simply allowed to change width. Matching them matters more than the jitter.
+
+   Also worth recording: GTK's CSS does NOT implement max-width. It is rejected
+   at parse time ("'max-width' is not a valid property name") and the whole
+   declaration is dropped, so a stylesheet cannot clamp a pill's growth at all;
+   min-width is only ever a floor. Any future attempt to pin width has to be
+   done in the module's text, not here. */
 #custom-hardware {
   color: @color6;
   text-shadow: 0 0 6px alpha(@color6, 0.55);
+}
+
+/* Monitor backlight. @color3 rather than hardware's @color6 so the two
+   neighbouring pills in the left group stay distinguishable at a glance. */
+#custom-brightness {
+  color: @color3;
+  text-shadow: 0 0 6px alpha(@color3, 0.5);
 }
 
 #pulseaudio {
@@ -313,6 +334,7 @@ window#waybar {
 #clock:hover,
 #disk:hover,
 #custom-hardware:hover,
+#custom-brightness:hover,
 #custom-network:hover,
 #custom-weather:hover,
 #custom-network-bluetooth:hover {

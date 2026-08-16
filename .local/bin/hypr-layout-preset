@@ -1,111 +1,197 @@
-#!/bin/bash
-# Hyprland layout preset manager
-# Quick keybindings to apply common layout arrangements
+#!/usr/bin/env bash
+# hypr-layout-preset — apply common window arrangements on the active workspace.
+#
+# WHAT WAS WRONG WITH THE ORIGINAL (rewritten 2026-08-03)
+# -------------------------------------------------------
+# The first version was written against assumptions that do not hold on this
+# system, and several of its presets could not have worked:
+#
+#   1. It passed the RAW monitor height (1440) to `resizeactive exact`. waybar
+#      reserves 46px at the top, so every window was asked to be ~56px taller
+#      than the usable area and got silently clamped.
+#   2. `reset` used `hyprctl dispatch splitratio exact 0.5`. In Hyprland 0.56
+#      splitratio is NOT a dispatcher ("Invalid dispatcher") — it is a layoutmsg,
+#      and it takes a DELTA, so `exact` is rejected with "failed to parse".
+#      That preset was dead code that failed silently on every press.
+#   3. It called `movefocus l` a fixed number of times to reach the leftmost
+#      window. movefocus is a no-op at the edge, so with a different window
+#      count it started from the wrong place and resized the wrong windows.
+#   4. It never checked how many windows were actually tiled. Running `thirds`
+#      with two windows resized the same window twice.
+#   5. Hardcoded gaps_in/gaps_out = 5, which silently desyncs from 05-look.conf.
+#
+# HOW THIS VERSION WORKS
+# ----------------------
+# Geometry is read from Hyprland at runtime — monitor box, reserved area (the
+# bar), and real gap values — so it tracks config changes and a different bar
+# height without edits. Windows are addressed by ADDRESS, sorted by x position,
+# rather than by walking focus, so the count never has to be guessed and focus
+# is left where the user had it.
+#
+# Only tiled windows are touched. Floating windows are deliberately ignored:
+# they are floating because the user wanted them out of the tiling flow.
+set -uo pipefail
 
-# Debug logging
-echo "$(date): hypr-layout-preset called with: $1" >> /tmp/hypr-layout-debug.log
+log() { echo "$(date '+%F %T') $*" >> /tmp/hypr-layout-debug.log; }
 
-# Get monitor dimensions using jq
-MONITOR_WIDTH=$(hyprctl monitors -j | jq '.[0].width')
-MONITOR_HEIGHT=$(hyprctl monitors -j | jq '.[0].height')
+command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
 
-# Get gap size from config (default 5)
-GAPS_IN=5
-GAPS_OUT=5
+# ── Geometry, read live ──────────────────────────────────────────────────────
+# reserved is [left, top, right, bottom] — verified against waybar position:top
+# height:46 producing reserved[1]=46 on this machine.
+read -r MON_X MON_Y MON_W MON_H RES_L RES_T RES_R RES_B < <(
+    hyprctl monitors -j | jq -r '
+        (map(select(.focused)) | .[0]) // .[0]
+        | "\(.x) \(.y) \(.width) \(.height) \(.reserved[0]) \(.reserved[1]) \(.reserved[2]) \(.reserved[3])"'
+)
 
-case "$1" in
-    thirds)
-        # Three equal columns (33.33% each)
-        # Calculate exact dimensions: (width - outer_gaps - inner_gaps) / 3
-        # With 3 windows: 2 outer gaps (left & right) + 2 inner gaps (between windows)
-        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN * 2))
-        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
-        WINDOW_WIDTH=$((USABLE_WIDTH / 3))
+# Gaps come from the live config, not constants. gaps_in/gaps_out may be a
+# multi-value (top right bottom left) string in newer configs, so take the first
+# field and fall back to 5 if the option is unreadable.
+read_gap() {
+    local v
+    v=$(hyprctl getoption "general:$1" -j 2>/dev/null \
+        | jq -r '(.custom // .int // empty) | tostring' 2>/dev/null)
+    v=${v%% *}
+    [[ "$v" =~ ^[0-9]+$ ]] && echo "$v" || echo 5
+}
+GAPS_IN=$(read_gap gaps_in)
+GAPS_OUT=$(read_gap gaps_out)
 
-        echo "Thirds: Monitor=$MONITOR_WIDTH, Usable=$USABLE_WIDTH, Per Window=$WINDOW_WIDTH" >> /tmp/hypr-layout-debug.log
+BORDER=$(hyprctl getoption general:border_size -j 2>/dev/null | jq -r '.int // 2')
+[[ "$BORDER" =~ ^[0-9]+$ ]] || BORDER=2
 
-        # Focus leftmost window and resize
-        hyprctl dispatch movefocus l
-        hyprctl dispatch movefocus l
-        hyprctl dispatch movefocus l
-        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+# THE WIDTH BUDGET — derived from measurement, not assumed.
+#
+# `resizewindowpixel` sets the CONTENT width; Hyprland adds the border outside
+# it. Measuring three tiled windows on this monitor gives:
+#
+#   left edge   = gaps_out + border            =  5 + 2  =  7
+#   right edge  = MON_W - gaps_out - border    = 3433
+#   inter-window gap = border+gaps_in+gaps_in+border = 2+5+5+2 = 14
+#
+# so the content available to N windows is:
+#
+#   MON_W - 2*(gaps_out+border) - (N-1)*(2*border + 2*gaps_in)
+#
+# For N=3 that is 3440-14-28 = 3398, which matches the observed sum of widths
+# exactly. An earlier version of this script used (MON_W - 2*gaps_out - ...)
+# and was 10px wide, because it forgot the borders entirely.
+EDGE=$(( GAPS_OUT + BORDER ))
+SEAM=$(( 2 * BORDER + 2 * GAPS_IN ))
 
-        # Move to second window and resize
-        hyprctl dispatch movefocus r
-        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+# Position and height are NOT set by this script. The tiling engine derives them
+# from gaps/borders and silently overrides anything passed for them — asking for
+# y=51 h=1384 reproducibly yielded y=53 h=1380. Widths ARE honoured exactly, so
+# only widths are set and dwindle keeps ownership of everything else.
+ROW_W=$(( MON_W - RES_L - RES_R - EDGE * 2 ))
 
-        # Move to third window and resize
-        hyprctl dispatch movefocus r
-        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
+# ── Tiled windows on the active workspace, left to right ─────────────────────
+mapfile -t WINS < <(
+    hyprctl clients -j | jq -r --argjson ws "$(hyprctl activeworkspace -j | jq -r .id)" '
+        [ .[] | select(.workspace.id == $ws and .floating == false and .mapped == true) ]
+        | sort_by(.at[0]) | .[] | .address'
+)
+COUNT=${#WINS[@]}
 
-        echo "Resized 3 windows to ${WINDOW_WIDTH}px each" >> /tmp/hypr-layout-debug.log
-        ;;
+# Set one window's width, addressing it by address so focus and window order are
+# never disturbed.
+#
+# The height passed is the window's CURRENT height, not 0: `exact <w> 0` is
+# rejected outright with "Invalid size", which made an earlier version of this
+# script fail silently on every call — it exited 0 and changed nothing. The
+# tiling engine overrides the height anyway, so echoing the current value is the
+# way to say "width only".
+set_width() {
+    local addr=$1 w=$2 h
+    h=$(hyprctl clients -j | jq -r --arg a "$addr" '.[]|select(.address==$a)|.size[1]')
+    [[ "$h" =~ ^[0-9]+$ ]] || return 0
+    hyprctl dispatch resizewindowpixel "exact $w $h,address:$addr" >/dev/null
+}
 
-    main-sidebar)
-        # Main window (66%) + sidebar (33%)
-        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN))
-        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
-        MAIN_WIDTH=$((USABLE_WIDTH * 2 / 3))
-        SIDE_WIDTH=$((USABLE_WIDTH / 3))
+# Lay out N columns with the given integer weights. The rounding remainder goes
+# into the last column so the widths always sum to exactly the budget and the
+# row lands flush against the right edge.
+columns() {
+    local -a weights=("$@")
+    local n=${#weights[@]} total=0 i used=0 w
+    for i in "${weights[@]}"; do total=$(( total + i )); done
+    local avail=$(( ROW_W - SEAM * (n - 1) ))
+    for (( i = 0; i < n; i++ )); do
+        if (( i == n - 1 )); then
+            w=$(( avail - used ))
+        else
+            w=$(( avail * weights[i] / total ))
+            used=$(( used + w ))
+        fi
+        set_width "${WINS[i]}" "$w"
+    done
+}
 
-        # Focus leftmost and resize to 66%
-        hyprctl dispatch movefocus l
-        hyprctl dispatch movefocus l
-        hyprctl dispatch resizeactive exact ${MAIN_WIDTH} ${MONITOR_HEIGHT}
+# Refuse rather than mangle: a preset that needs N windows does nothing useful
+# with fewer, and silently resizing the wrong window is worse than no-op.
+need() {
+    local want=$1
+    if (( COUNT < want )); then
+        notify-send -u low "Layout: $PRESET" \
+            "needs $want tiled windows, found $COUNT" 2>/dev/null
+        log "$PRESET aborted: need $want, have $COUNT"
+        exit 0
+    fi
+}
 
-        # Focus right window and resize to 33%
-        hyprctl dispatch movefocus r
-        hyprctl dispatch resizeactive exact ${SIDE_WIDTH} ${MONITOR_HEIGHT}
-        ;;
+PRESET="${1:-}"
+case "$PRESET" in
+    half)          need 2; columns 1 1 ;;
+    thirds)        need 3; columns 1 1 1 ;;
+    quarters)      need 4; columns 1 1 1 1 ;;
+    main-sidebar)  need 2; columns 2 1 ;;      # 66 / 33
+    sidebar-main)  need 2; columns 1 2 ;;      # 33 / 66
+    wide-center)   need 3; columns 1 2 1 ;;    # 25 / 50 / 25
+    golden)        need 2; columns 62 38 ;;    # ~1.618:1
 
-    half)
-        # Two equal halves (50/50)
-        TOTAL_GAPS=$((GAPS_OUT * 2 + GAPS_IN))
-        USABLE_WIDTH=$((MONITOR_WIDTH - TOTAL_GAPS))
-        WINDOW_WIDTH=$((USABLE_WIDTH / 2))
+    # Widen the active window to the full budget, squeezing the others. Uses
+    # Hyprland's own maximize state rather than pixel math so it toggles back
+    # cleanly; unlike `fullscreen` this keeps the bar and gaps visible.
+    max)           need 1
+                   hyprctl dispatch fullscreen 1 >/dev/null ;;
 
-        # Resize both windows
-        hyprctl dispatch movefocus l
-        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
-        hyprctl dispatch movefocus r
-        hyprctl dispatch resizeactive exact ${WINDOW_WIDTH} ${MONITOR_HEIGHT}
-        ;;
+    # Even out every column. Re-applying the layout keyword does NOT re-flow
+    # existing windows (verified: widths stayed 1140/1162/1096 across a
+    # `general:layout dwindle` write), which is why the original script's reset
+    # appeared to do nothing. Assigning equal weights across however many
+    # windows are present is what actually restores even sizing.
+    reset)         need 1
+                   eq=(); for ((i=0;i<COUNT;i++)); do eq+=(1); done
+                   columns "${eq[@]}"
+                   log "reset: evened $COUNT columns" ;;
 
-    master)
-        # Switch to master layout
-        hyprctl keyword general:layout master
-        echo "Switched to master layout" >> /tmp/hypr-layout-debug.log
-        ;;
-
-    dwindle)
-        # Switch to dwindle layout (default)
-        hyprctl keyword general:layout dwindle
-        echo "Switched to dwindle layout" >> /tmp/hypr-layout-debug.log
-        ;;
-
-    reset)
-        # Reset all splits to equal sizing
-        hyprctl dispatch movefocus l
-        hyprctl dispatch movefocus l
-        hyprctl dispatch splitratio exact 0.5
-        hyprctl dispatch movefocus r
-        hyprctl dispatch splitratio exact 0.5
-        echo "Reset splits to default" >> /tmp/hypr-layout-debug.log
-        ;;
+    master|dwindle)
+                   hyprctl keyword general:layout "$PRESET" >/dev/null
+                   log "switched layout to $PRESET" ;;
 
     *)
-        echo "Hyprland Layout Preset Manager"
-        echo ""
-        echo "Usage: hypr-layout-preset {thirds|main-sidebar|half|master|dwindle|reset}"
-        echo ""
-        echo "  thirds        - Three equal columns (33/33/33)"
-        echo "  main-sidebar  - Main + sidebar (66/33)"
-        echo "  half          - Two equal halves (50/50)"
-        echo "  master        - Switch to master layout"
-        echo "  dwindle       - Switch to dwindle layout"
-        echo "  reset         - Reset all windows to equal size"
-        echo ""
-        echo "Note: Layout presets work best with 2-3 tiled windows on current workspace"
-        echo "Monitor: ${MONITOR_WIDTH}x${MONITOR_HEIGHT}"
-        ;;
+        cat <<EOF
+hypr-layout-preset — window arrangement presets
+
+Usage: hypr-layout-preset <preset>
+
+  half           two equal columns          (50/50)      needs 2
+  thirds         three equal columns        (33/33/33)   needs 3
+  quarters       four equal columns         (25x4)       needs 4
+  main-sidebar   main left + sidebar right  (66/33)      needs 2
+  sidebar-main   sidebar left + main right  (33/66)      needs 2
+  wide-center    narrow / wide / narrow     (25/50/25)   needs 3
+  golden         golden ratio               (62/38)      needs 2
+  max            active window fills usable area         needs 1
+  reset          re-apply the layout engine (even sizes)
+  master         switch to master layout
+  dwindle        switch to dwindle layout
+
+Monitor ${MON_W}x${MON_H}  width budget ${ROW_W}  seam ${SEAM}px
+gaps_in=${GAPS_IN} gaps_out=${GAPS_OUT} border=${BORDER}  tiled windows here: ${COUNT}
+EOF
+        exit 0 ;;
 esac
+
+log "$PRESET applied to $COUNT window(s), row width ${ROW_W} before seams"

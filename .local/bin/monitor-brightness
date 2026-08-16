@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# monitor-brightness — brightness control for external monitors over DDC/CI.
+#
+# WHY THIS EXISTS INSTEAD OF brightnessctl
+# ----------------------------------------
+# brightnessctl (and light, and XF86MonBrightness handling generally) writes to
+# /sys/class/backlight/. That interface only exists for LAPTOP panels, where the
+# GPU drives the backlight directly. On this machine /sys/class/backlight/ is
+# EMPTY, because the display is a Dell AW3418DW — an external monitor with its
+# own power supply and scaler. There is nothing there to write to, so installing
+# brightnessctl would not have helped.
+#
+# The correct channel is DDC/CI: a low-speed serial protocol carried over the
+# DisplayPort cable to the monitor's own firmware. It drives the same controls
+# as the physical OSD buttons, so this is REAL backlight brightness, not a gamma
+# trick — blacks get darker rather than washed out.
+#
+# THE TWO THINGS THAT MAKE A NAIVE VERSION UNUSABLE
+# -------------------------------------------------
+#  1. SPEED. A bare `ddcutil setvcp` takes ~840ms, because ddcutil re-probes
+#     every i2c bus on startup before doing any work. Passing --bus skips the
+#     probe outright and brings a set down to ~330ms (measured 2026-08-04).
+#     The bus is cached in BUS_CACHE so we do not pay a `detect` either.
+#  2. QUEUEING. Even at 330ms, DDC is far slower than the key repeat rate. Held
+#     or mashed keys queue commands the monitor drains one at a time, so the
+#     display keeps drifting for seconds after the key is released. This script
+#     takes a non-blocking lock and EXITS if another instance is mid-write, so
+#     extra presses are dropped instead of buffered. That is why the Hyprland
+#     bind is `bind` and not `bindel` (no key repeat) — see 07-binds.conf.
+#
+# The monitor reports max=100 and uses a 0-100 scale for VCP 0x10.
+set -uo pipefail
+
+STEP=5
+MIN=0
+MAX=100
+BUS_CACHE="${XDG_RUNTIME_DIR:-/tmp}/ddc-brightness-bus"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/ddc-brightness.lock"
+# The waybar module reads this instead of issuing its own ~330ms DDC read, which
+# would stall the whole bar on every tick. Kept current by every write below.
+VALUE_CACHE="${XDG_RUNTIME_DIR:-/tmp}/ddc-brightness-value"
+
+die() { echo "monitor-brightness: $*" >&2; exit 1; }
+
+command -v ddcutil >/dev/null || die "ddcutil is not installed (pacman -S ddcutil)"
+
+# Resolve the i2c bus once and cache it. `ddcutil detect` costs ~1s, so paying it
+# on every keypress would defeat the point; the bus only changes if the monitor
+# is replugged into a different port, which `--bus` failing below detects.
+find_bus() {
+    ddcutil detect --brief 2>/dev/null \
+        | awk -F/ '/I2C bus:/ {print $NF}' \
+        | sed 's/i2c-//' | head -1
+}
+
+get_bus() {
+    local bus
+    if [[ -r "$BUS_CACHE" ]]; then
+        bus=$(<"$BUS_CACHE")
+        [[ "$bus" =~ ^[0-9]+$ ]] && { echo "$bus"; return; }
+    fi
+    bus=$(find_bus)
+    [[ "$bus" =~ ^[0-9]+$ ]] || die "no DDC/CI-capable monitor found"
+    echo "$bus" > "$BUS_CACHE"
+    echo "$bus"
+}
+
+BUS=$(get_bus)
+
+# ddcutil prints a harmless warning about -EIO on this monitor for every call;
+# it refers to UNSUPPORTED feature codes, not to brightness, which reads and
+# writes correctly. Filtered so it does not pollute notifications or logs.
+ddc() { ddcutil --bus "$BUS" "$@" 2>/dev/null; }
+
+current() {
+    local v
+    v=$(ddc getvcp 10 --brief | awk '{print $4}')
+    [[ "$v" =~ ^[0-9]+$ ]] || return 1
+    echo "$v"
+}
+
+notify() {
+    command -v notify-send >/dev/null || return 0
+    # Replace rather than stack: -h string:x-canonical-private-synchronous makes
+    # mako update one notification in place instead of spawning a new one per
+    # keypress.
+    notify-send -u low -t 1500 \
+        -h string:x-canonical-private-synchronous:brightness \
+        -h "int:value:$1" "Brightness: $1%" 2>/dev/null || true
+}
+
+apply() {
+    local target=$1
+    (( target < MIN )) && target=$MIN
+    (( target > MAX )) && target=$MAX
+    ddc setvcp 10 "$target" || die "failed to set brightness (monitor may have DDC/CI disabled in its OSD)"
+    echo "$target" > "$VALUE_CACHE"
+    notify "$target"
+    # Nudge waybar to re-read immediately instead of waiting out its interval,
+    # so the pill tracks the keypress. RTMIN+9 is this config's brightness
+    # signal; the module declares the matching "signal" key.
+    pkill -RTMIN+9 waybar 2>/dev/null || true
+}
+
+# Non-blocking lock: if a write is already in flight, drop this press rather
+# than queue it behind ~330ms of DDC latency.
+exec 9>"$LOCK"
+flock -n 9 || exit 0
+
+case "${1:-}" in
+    up)     cur=$(current) || die "cannot read current brightness"
+            apply $(( cur + STEP )) ;;
+    down)   cur=$(current) || die "cannot read current brightness"
+            apply $(( cur - STEP )) ;;
+    set)    [[ "${2:-}" =~ ^[0-9]+$ ]] || die "usage: monitor-brightness set <0-100>"
+            apply "$2" ;;
+    get)    cur=$(current) || die "cannot read current brightness"
+            echo "$cur" > "$VALUE_CACHE"
+            echo "$cur" ;;
+    *)
+        cat <<EOF
+monitor-brightness — DDC/CI brightness for external monitors
+
+Usage:
+  monitor-brightness up            raise by ${STEP}%
+  monitor-brightness down          lower by ${STEP}%
+  monitor-brightness set <0-100>   set an absolute level
+  monitor-brightness get           print the current level
+
+Monitor is on i2c bus ${BUS} (cached in ${BUS_CACHE}).
+Delete that file if the monitor is moved to another port.
+EOF
+        exit 0 ;;
+esac
