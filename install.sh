@@ -116,6 +116,17 @@ PKGS=(
     noto-fonts-emoji
     python-fonttools          # waybar/scripts/verify-glyphs.py
 
+    # Qt theming — ~/.config/wal/postrun patches Qt colors through these.
+    # kvantum applies the actual theme (LayanDark, tracked in .config/Kvantum/
+    # — it's not a package, just a hand-built theme dir with no AUR
+    # equivalent found); qt6ct is what tells Qt apps to use Kvantum at all
+    # instead of falling back to a native, unthemed Qt style. Both were
+    # missing from this list for years — present on the machine this was
+    # developed on only because they were installed by hand at some point,
+    # which is exactly the kind of drift this script exists to prevent.
+    kvantum
+    qt6ct
+
     # System tools
     # Both installed on every machine: ~/.local/bin/brightness picks whichever
     # one this machine's hardware actually needs at runtime (brightnessctl for

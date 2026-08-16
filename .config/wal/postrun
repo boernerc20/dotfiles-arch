@@ -42,7 +42,7 @@ Two behaviours worth knowing about:
    family (what modern GNOME-era apps actually read). Defining only one of
    the two leaves half your apps untouched.
 """
-import json, os
+import json, os, sys
 
 colors_file = os.path.expanduser('~/.cache/wal/colors.json')
 output_file = os.path.expanduser('~/.cache/wal/colors-qt6ct.conf')
@@ -163,17 +163,25 @@ kvantum_colors = {
     'progress.indicator.text.color':  raw_fg,
 }
 
+# Skips cleanly rather than crashing the rest of postrun (GTK theming below
+# still needs to run) if Kvantum isn't installed or LayanDark isn't deployed —
+# both are now in install.sh / .config/Kvantum/, but a machine set up before
+# that existed, or one where Kvantum genuinely isn't wanted, should not lose
+# every other consumer over one missing file.
 kvantum_cfg = os.path.expanduser('~/.config/Kvantum/LayanDark/LayanDark.kvconfig')
-with open(kvantum_cfg) as f:
-    lines = f.readlines()
+if os.path.exists(kvantum_cfg):
+    with open(kvantum_cfg) as f:
+        lines = f.readlines()
 
-with open(kvantum_cfg, 'w') as f:
-    for line in lines:
-        key = line.split('=')[0].strip()
-        if key in kvantum_colors:
-            f.write(f"{key}={kvantum_colors[key]}\n")
-        else:
-            f.write(line)
+    with open(kvantum_cfg, 'w') as f:
+        for line in lines:
+            key = line.split('=')[0].strip()
+            if key in kvantum_colors:
+                f.write(f"{key}={kvantum_colors[key]}\n")
+            else:
+                f.write(line)
+else:
+    print("postrun: Kvantum/LayanDark not found, skipping Qt theme patch", file=sys.stderr)
 
 # --- GTK CSS for Thunar and other GTK apps ---
 gtk_css_path = os.path.expanduser('~/.config/gtk-3.0/gtk.css')
