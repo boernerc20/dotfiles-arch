@@ -54,9 +54,16 @@ window#waybar {
 }
 
 /* ── Base plate shared by every module ───────────────────────────────────── */
+/* #backlight and #battery are waybar's own NATIVE modules (no #custom- prefix
+   — that's only for custom/ script-backed modules), used by the laptop's
+   config-laptop.jsonc in place of the desktop's DDC/CI custom/brightness.
+   Without a rule here they render with no plate at all, which on this dark
+   background reads as "the pill doesn't exist" rather than "unstyled". */
 #custom-distro,
 #custom-hardware,
 #custom-brightness,
+#backlight,
+#battery,
 #custom-weather,
 #custom-network-bluetooth,
 #custom-cliphist,
@@ -133,9 +140,12 @@ window#waybar {
   text-shadow: 0 0 6px alpha(@color6, 0.55);
 }
 
-/* Monitor backlight. @color3 rather than hardware's @color6 so the two
-   neighbouring pills in the left group stay distinguishable at a glance. */
-#custom-brightness {
+/* Monitor backlight (desktop, custom/brightness over DDC/CI) and its laptop
+   equivalent (#backlight, waybar's native module reading /sys/class/backlight
+   directly — see config-laptop.jsonc). Same rule, same color: they are the
+   same concept on different hardware, never both present on one machine. */
+#custom-brightness,
+#backlight {
   color: @color3;
   text-shadow: 0 0 6px alpha(@color3, 0.5);
 }
@@ -335,6 +345,8 @@ window#waybar {
 #disk:hover,
 #custom-hardware:hover,
 #custom-brightness:hover,
+#backlight:hover,
+#battery:hover,
 #custom-network:hover,
 #custom-weather:hover,
 #custom-network-bluetooth:hover {
