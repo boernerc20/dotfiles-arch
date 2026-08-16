@@ -117,11 +117,13 @@ PKGS=(
     python-fonttools          # waybar/scripts/verify-glyphs.py
 
     # System tools
-    # ddcutil, NOT brightnessctl: the display is an external monitor (AW3418DW),
-    # so /sys/class/backlight/ is empty and brightnessctl has nothing to write
-    # to. Brightness goes over DDC/CI instead — see ~/.local/bin/monitor-brightness.
-    # brightnessctl is still worth installing on a LAPTOP; it is harmless here
-    # but was listed for years while the brightness keys silently did nothing.
+    # Both installed on every machine: ~/.local/bin/brightness picks whichever
+    # one this machine's hardware actually needs at runtime (brightnessctl for
+    # a real /sys/class/backlight panel, ddcutil/DDC-CI for an external monitor
+    # that has none — see that script's header). Installing only one meant
+    # years of a desktop with ddcutil and brightness keys that silently did
+    # nothing on a laptop that had brightnessctl instead, or vice versa.
+    brightnessctl
     ddcutil
     playerctl
     networkmanager
@@ -378,6 +380,30 @@ for entry in "${CONFIG_ENTRIES[@]}"; do
     fi
     info "Deployed .config/$entry"
 done
+
+# ── Waybar config: desktop vs laptop ─────────────────────────
+# The loop above deploys BOTH config.jsonc and config-laptop.jsonc, since it
+# copies everything the repo tracks — that's fine, the unused one is just a
+# few KB sitting there. What matters is which one is actually live: waybar
+# only ever reads ~/.config/waybar/config.jsonc, so on a laptop chassis that
+# path needs to become the trimmed variant (no updates/notification/cliphist
+# widgets, native backlight instead of DDC/CI — see config-laptop.jsonc's own
+# header for the full reasoning).
+#
+# `hostnamectl chassis` is what's checked, not a hostname pattern — chassis
+# comes from DMI/ACPI data the firmware reports, so it can't drift out of sync
+# with a rename the way matching on "laptop" in $HOSTNAME could.
+CHASSIS=$(hostnamectl chassis 2>/dev/null || echo "")
+if [[ "$CHASSIS" =~ ^(laptop|convertible|tablet|handset)$ ]]; then
+    if [[ -f "$HOME/.config/waybar/config-laptop.jsonc" ]]; then
+        cp "$HOME/.config/waybar/config-laptop.jsonc" "$HOME/.config/waybar/config.jsonc"
+        success "Waybar: using the laptop layout (chassis: $CHASSIS)"
+    else
+        warn "chassis is '$CHASSIS' but config-laptop.jsonc is missing — keeping the desktop layout"
+    fi
+else
+    info "Waybar: using the desktop layout (chassis: ${CHASSIS:-unknown})"
+fi
 
 # Deploy home dotfiles
 [[ -f "$DOTFILES_DIR/.zshrc_copy" ]]  && cp "$DOTFILES_DIR/.zshrc_copy" "$HOME/.zshrc"

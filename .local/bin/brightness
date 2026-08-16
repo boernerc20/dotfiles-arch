@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# brightness — dispatches to the right backlight control for this machine.
+#
+# A laptop panel exposes /sys/class/backlight/*, and brightnessctl writes to it
+# directly. An external monitor (this desktop's Dell AW3418DW) has no such
+# entry — the GPU never drives its backlight — so brightness has to go over
+# DDC/CI instead; see ~/.local/bin/monitor-brightness for why that one exists
+# and why it's a whole separate script (bus caching, a non-blocking lock,
+# ~330ms per write). This dispatcher exists so 07-binds.conf and waybar's
+# custom/brightness module can call ONE command on every machine instead of
+# each carrying its own hardware check.
+set -uo pipefail
+
+if [[ -n "$(ls -A /sys/class/backlight/ 2>/dev/null)" ]]; then
+    STEP=10
+    case "${1:-}" in
+        up)   brightnessctl set "${STEP}%+" -q ;;
+        down) brightnessctl set "${STEP}%-" -q ;;
+        set)  [[ "${2:-}" =~ ^[0-9]+$ ]] || { echo "usage: brightness set <0-100>" >&2; exit 1; }
+              brightnessctl set "${2}%" -q ;;
+        get)  brightnessctl -m | awk -F, '{print $4}' | tr -d '%' ;;
+        *)    echo "brightness up|down|set <0-100>|get  (laptop panel via brightnessctl)" ;;
+    esac
+else
+    exec "$HOME/.local/bin/monitor-brightness" "${1:-}" "${2:-}"
+fi

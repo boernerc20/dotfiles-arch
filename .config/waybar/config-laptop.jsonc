@@ -1,0 +1,168 @@
+{
+  // ==========================================================================
+  // waybar — laptop variant.
+  // --------------------------------------------------------------------------
+  // Trimmed from the desktop's config.jsonc: no custom/updates (yay -Syu is a
+  // desktop habit, not something worth a laptop widget), no custom/notification
+  // (do-not-disturb toggle rarely used away from the desk), no custom/cliphist
+  // (clipboard history is still on SUPER+V, just not surfaced in the bar), and
+  // no custom/brightness (that module is DDC/CI-specific — see its header — and
+  // this machine has a real /sys/class/backlight panel; the stock "backlight"
+  // module reads that directly, no custom script needed).
+  //
+  // install.sh symlinks this file to ~/.config/waybar/config.jsonc on a laptop
+  // chassis and config.jsonc (the desktop version) everywhere else — see its
+  // "Waybar config" step. style-base.css is shared; nothing here needs its own
+  // stylesheet.
+  //
+  // GLYPH WARNING — same as config.jsonc: every icon below is a Nerd Font PUA
+  // character. Re-run ~/.config/waybar/scripts/verify-glyphs.py after editing.
+  // ==========================================================================
+
+  "layer": "top",
+  "position": "top",
+  "height": 42,
+  "spacing": 6,
+  "reload_style_on_change": true,
+
+  "modules-left": [
+    "custom/distro",
+    "custom/hardware",
+    "backlight",
+    "disk",
+    "pulseaudio",
+    "mpris"
+  ],
+  "modules-center": [
+    "hyprland/workspaces"
+  ],
+  "modules-right": [
+    "privacy",
+    "custom/weather",
+    "custom/network",
+    "custom/network-bluetooth",
+    "battery",
+    "clock"
+  ],
+
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4, 5]
+    },
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1"
+  },
+
+  "custom/distro": {
+    "exec": "~/.config/waybar/scripts/distro_icon.sh",
+    "format": "{}",
+    "interval": 0,
+    "tooltip": false,
+    "on-click": "rofi -show drun -config ~/.config/rofi/colors-rofi.rasi"
+  },
+
+  // hardware.sh auto-detects GPU vs battery for its fourth field — on this
+  // machine that's the battery, which duplicates the "battery" module below.
+  // Kept anyway for consistency with the desktop bar's look; if that reads as
+  // too redundant in practice, drop the "battery" module below instead of
+  // this one, since hardware.sh's reading sits in the same pill as CPU/MEM/TEMP.
+  "custom/hardware": {
+    "exec": "~/.config/waybar/scripts/hardware.sh",
+    "interval": 5,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  // Native backlight module — this machine has a real /sys/class/backlight
+  // entry, so no custom DDC/CI script is needed (contrast config.jsonc's
+  // custom/brightness, which exists ONLY because the desktop's external
+  // monitor has no such entry).
+  "backlight": {
+    "format": "{icon}<span size='8704'> </span>{percent}%",
+    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "on-scroll-up": "brightnessctl set 5%+",
+    "on-scroll-down": "brightnessctl set 5%-"
+  },
+
+  "battery": {
+    "format": "{icon}<span size='8704'> </span>{capacity}%",
+    "format-charging": "󰂄<span size='8704'> </span>{capacity}%",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "tooltip-format": "{time} remaining"
+  },
+
+  "clock": {
+    "format": "<span alpha='72%'>󰃭<span size='8704'> </span>{0:%a %b %d}</span><span alpha='38%'> │ </span>󰥔<span size='8704'> </span>{0:%I:%M %p}",
+    "format-alt": "<span alpha='72%'>󰃭<span size='8704'> </span>{0:%a %b %d}</span><span alpha='38%'> │ </span>󰥔<span size='8704'> </span>{0:%H:%M}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+
+  "custom/weather": {
+    "exec": "~/.config/waybar/scripts/weather.sh",
+    "interval": 600,
+    "format": "{}",
+    "tooltip": false
+  },
+
+  "custom/network-bluetooth": {
+    "exec": "~/.config/waybar/scripts/network_bluetooth.sh",
+    "interval": 10,
+    "format": "{}",
+    "tooltip": false,
+    "on-click": "blueman-manager"
+  },
+
+  "privacy": {
+    "icon-spacing": 8,
+    "icon-size": 15,
+    "transition-duration": 200,
+    "modules": [
+      { "type": "screenshare", "tooltip": true },
+      { "type": "audio-in", "tooltip": true }
+    ]
+  },
+
+  "disk": {
+    "path": "/",
+    "interval": 120,
+    "format": "󰋊<span size='8704'> </span>{percentage_used}%",
+    "tooltip-format": "{used} used of {total}  ({free} free)"
+  },
+
+  "mpris": {
+    "format": "<span alpha='72%'>󰝚<span size='8704'> </span>{artist}</span><span alpha='38%'> │ </span><i>{title}</i>",
+    "format-paused": "<span alpha='72%'>󰏤<span size='8704'> </span>{artist}</span><span alpha='38%'> │ </span><i>{title}</i>",
+    "artist-len": 14,
+    "title-len": 22,
+    "max-length": 40,
+    "player": "spotify",
+    "on-click": "playerctl -p spotify play-pause"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}<span size='8704'> </span>{volume}%",
+    "format-muted": "󰝟<span size='8704'> </span>muted",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+  },
+
+  "custom/network": {
+    "exec": "~/.config/waybar/scripts/net-sparkline.py auto",
+    "return-type": "json",
+    "restart-interval": 5,
+    "on-click": "kitty --hold -e sh -c 'ip -br addr; echo; ss -tunp'"
+  }
+}

@@ -32,8 +32,12 @@ except ImportError:
 CONFIG_DIR = Path(__file__).resolve().parent.parent
 FONT = Path("/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf")
 
-# Files that legitimately contain bar glyphs.
-SOURCES = [CONFIG_DIR / "config.jsonc"] + sorted(
+# Files that legitimately contain bar glyphs. Both config.jsonc (desktop) and
+# config-laptop.jsonc (see install.sh's "Waybar config" step, which symlinks
+# one of the two to ~/.config/waybar/config.jsonc depending on chassis) are
+# checked — a glyph regression in the laptop variant would otherwise ship
+# invisibly, since nothing runs this script against it.
+SOURCES = sorted(CONFIG_DIR.glob("config*.jsonc")) + sorted(
     (CONFIG_DIR / "scripts").glob("*.sh")
 )
 
@@ -54,7 +58,7 @@ BMP_PUA = (0xE000, 0xF8FF)
 # worse than no guard. PUA use is therefore an ERROR in config.jsonc, the file
 # that actually suffered the corruption and where nf-md alternatives exist,
 # and a NOTE everywhere else.
-PUA_ENFORCED = {"config.jsonc"}
+PUA_ENFORCED = {"config.jsonc", "config-laptop.jsonc"}
 
 
 def font_cmap(path):
