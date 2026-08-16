@@ -32,7 +32,42 @@ import os
 import sys
 import time
 
-IFACE = sys.argv[1] if len(sys.argv) > 1 else "enp7s0"
+def _autodetect_iface():
+    """Pick the interface actually carrying default-route traffic.
+
+    Hard-coding a NIC name (this used to say "enp7s0") breaks on any machine
+    with a different interface — a laptop's wifi is "wlan0" or "wlp*", a
+    different desktop's ethernet numbers differently under systemd's
+    predictable-naming scheme. /proc/net/route lists a default (0.0.0.0)
+    route's interface in column 2; if that lookup fails for any reason, fall
+    back to the first non-loopback interface with carrier.
+    """
+    try:
+        with open("/proc/net/route") as f:
+            next(f)  # header
+            for line in f:
+                fields = line.split()
+                if fields[1] == "00000000":  # destination 0.0.0.0
+                    return fields[0]
+    except Exception:
+        pass
+    try:
+        for name in sorted(os.listdir("/sys/class/net")):
+            if name == "lo":
+                continue
+            try:
+                with open(f"/sys/class/net/{name}/carrier") as f:
+                    if f.read().strip() == "1":
+                        return name
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return "lo"  # last resort: renders as disconnected, never crashes
+
+
+_arg = sys.argv[1] if len(sys.argv) > 1 else "auto"
+IFACE = _autodetect_iface() if _arg == "auto" else _arg
 
 BLOCKS = "▁▂▃▄▅▆▇█"
 CELLS = 14

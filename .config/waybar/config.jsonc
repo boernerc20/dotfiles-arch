@@ -240,7 +240,7 @@
   // and reading them back every second; this keeps history in memory instead.
   // restart-interval revives it if the process ever exits.
   "custom/network": {
-    "exec": "~/.config/waybar/scripts/net-sparkline.py enp7s0",
+    "exec": "~/.config/waybar/scripts/net-sparkline.py auto",
     "return-type": "json",
     "restart-interval": 5,
     "on-click": "kitty --hold -e sh -c 'ip -br addr; echo; ss -tunp'"
