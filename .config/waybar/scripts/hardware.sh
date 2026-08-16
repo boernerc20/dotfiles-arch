@@ -4,6 +4,9 @@
 cpu_icon=""
 mem_icon=""
 gpu_icon="󰘚"
+bat_empty_icon="󰂎"
+bat_full_icon="󰁹"
+bat_charging_icon="󰂄"
 temp_icon=""
 
 # ─── CPU USAGE ─────────────────────────────────────────────────────────────────
@@ -58,8 +61,29 @@ temp=$(
   done
 )
 
-# ─── GPU POWER DRAW (NVIDIA) ─────────────────────────────────────────────────
-gpu_power=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits | awk '{printf "%dW", $1}')
+# ─── FOURTH FIELD: NVIDIA GPU POWER DRAW, OR BATTERY IF NO GPU ────────────────
+# Auto-detected rather than forked per machine. This desktop has an NVIDIA GPU
+# and no battery; the laptop has a battery and no discrete GPU. One script
+# handles both by checking what the hardware actually offers, so a fresh clone
+# on either machine needs no local edit — and no local diff to keep in sync.
+fourth_icon=""
+fourth_value=""
+fourth_unit=""
+
+if command -v nvidia-smi &>/dev/null && nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits &>/dev/null; then
+  gpu_power=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits | awk '{printf "%d", $1}')
+  fourth_icon="$gpu_icon"
+  fourth_value="$gpu_power"
+  fourth_unit="W"
+elif [[ -r /sys/class/power_supply/BAT0/capacity ]]; then
+  bat_capacity=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null)
+  bat_status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null)
+  fourth_icon="$bat_full_icon"
+  [[ "$bat_status" == "Charging" ]] && fourth_icon="$bat_charging_icon"
+  (( bat_capacity < 20 )) && [[ "$bat_status" != "Charging" ]] && fourth_icon="$bat_empty_icon"
+  fourth_value="$bat_capacity"
+  fourth_unit="%"
+fi
 
 # ─── OUTPUT FOR WAYBAR ───────────────────────────────────────────────────────
 # Icon-to-value gap. A literal space is a full monospace cell, the same
@@ -86,8 +110,7 @@ SEP="<span alpha='30%'>│</span>"
 # as their numbers cross 9->10->100. This module now does the same. If the
 # jitter ever becomes intolerable, the fix is FEWER FIELDS, not padding: note
 # that CSS cannot help, since GTK implements min-width but not max-width.
-gpu_watts=${gpu_power%W}
-[[ "$gpu_watts" =~ ^[0-9]+$ ]] || gpu_watts=0
+[[ "$fourth_value" =~ ^[0-9]+$ ]] || fourth_value=0
 [[ "$temp" =~ ^[0-9]+$ ]] || temp=0
 
 # Built by concatenation rather than one big printf format. The format-string
@@ -98,8 +121,18 @@ field() {   # icon, value, unit
     printf '%s%s%s%s' "$1" "$GAP" "$2" "$3"
 }
 
-printf '%s %s %s %s %s %s %s\n' \
-  "$(field "$cpu_icon"  "$cpu"       '%')"  "$SEP" \
-  "$(field "$mem_icon"  "$mem"       '%')"  "$SEP" \
-  "$(field "$gpu_icon"  "$gpu_watts" 'W')"  "$SEP" \
-  "$(field "$temp_icon" "$temp"      '°C')"
+# Fourth field only prints if the hardware check above actually found something
+# — a machine with neither a GPU nor a battery (unlikely, but cheap to handle)
+# falls back to CPU/MEM/TEMP with no dangling separator.
+if [[ -n "$fourth_icon" ]]; then
+  printf '%s %s %s %s %s %s %s\n' \
+    "$(field "$cpu_icon"    "$cpu"          '%')"  "$SEP" \
+    "$(field "$mem_icon"    "$mem"          '%')"  "$SEP" \
+    "$(field "$fourth_icon" "$fourth_value" "$fourth_unit")"  "$SEP" \
+    "$(field "$temp_icon"   "$temp"         '°C')"
+else
+  printf '%s %s %s %s %s\n' \
+    "$(field "$cpu_icon"  "$cpu"  '%')"  "$SEP" \
+    "$(field "$mem_icon"  "$mem"  '%')"  "$SEP" \
+    "$(field "$temp_icon" "$temp" '°C')"
+fi
