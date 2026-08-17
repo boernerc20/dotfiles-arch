@@ -460,9 +460,12 @@ else
 fi
 
 # Deploy home dotfiles
+# .gtkrc-2.0 is NOT among these — it's gitignored (nwg-look generates it with
+# a hardcoded home path baked in, so tracking it would ship one machine's
+# path to every other). This used to have a dead `cp` line for it that could
+# never fire, since the source file can never exist in a checkout.
 [[ -f "$DOTFILES_DIR/.zshrc_copy" ]]  && cp "$DOTFILES_DIR/.zshrc_copy" "$HOME/.zshrc"
 [[ -f "$DOTFILES_DIR/.p10k.zsh" ]]    && cp "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh"
-[[ -f "$DOTFILES_DIR/.gtkrc-2.0" ]]   && cp "$DOTFILES_DIR/.gtkrc-2.0" "$HOME/.gtkrc-2.0"
 
 # Deploy local bin scripts
 mkdir -p "$HOME/.local/bin"

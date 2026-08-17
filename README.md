@@ -6,7 +6,9 @@
 
 ## <samp>About</samp>
 
-Personal dotfiles for an Arch Linux setup: a Hyprland desktop that re-themes itself from whatever wallpaper is on screen. Cyberpunk-leaning, ultrawide-first (3440x1440).
+Personal dotfiles for an Arch Linux desktop: Hyprland that re-themes itself from whatever wallpaper is on screen. Cyberpunk-leaning, built around a 3440x1440 ultrawide. This is what I actually run — a showcase of the setup, not a tutorial for building your own. Everyone's hardware, drivers and partition layout differ enough that a copy-paste install script would be irresponsible advice; see [Installation](#installation) for what that means in practice here.
+
+Synced to one other machine — a laptop — via `dotfiles-sync`, so the desktop stays the source of truth and the laptop follows.
 
 | | |
 |---|---|
@@ -70,92 +72,35 @@ PewDiePie's animated ASCII frames, recoloured to the live palette, with `fastfet
 
 - **Dynamic theming** — one dispatcher (`~/.local/bin/wal-hypr.sh`) runs wallust and propagates the palette to waybar, kitty, rofi, hyprlock, mako, cava, yazi, nvim, Firefox, GTK 2/3/4 and Qt/Kvantum
 - **Wallpaper picker** — `Super + W` opens a rofi thumbnail grid over `~/pics/wallpapers`; drop a file in the folder and it appears, no config
-- **Custom waybar** — CPU/RAM/GPU/temps, disk, a live network sparkline, weather, clipboard, update count and notification state
+- **Custom waybar, hardware-aware** — CPU/RAM/temp plus GPU power draw or battery percentage, whichever the machine actually has (auto-detected, not hardcoded); disk, a live network sparkline (interface auto-detected too) and weather. The desktop and laptop run two different module layouts from the same repo — see `config.jsonc` vs `config-laptop.jsonc`
 - **Single-instance lock** — `Super + L` goes through a `flock` wrapper so a double-press cannot spawn two lock clients (see [Security notes](#security))
 - **Glyph verifier** — `waybar/scripts/verify-glyphs.py` fails the build if a Nerd Font icon has been stripped or has decayed to ASCII
 - **Split config** — `hypr/conf.d/` is numbered and topic-scoped rather than one long file
-- **Machine-local overrides** — `hyprland-local.conf` and `~/.config/shell/secrets.env` keep per-machine and secret values out of the repo
+- **Machine-local overrides** — `hyprland-local.conf` (now actually sourced — see its own comment in `hyprland.conf`) and `~/.config/shell/secrets.env` keep per-machine and secret values out of the repo
+- **One-command sync** — `dotfiles-sync` pulls, redeploys every tracked config, and installs anything a pull newly depends on; see [Keeping machines in sync](#sync)
 
 <a name="installation"/>
 
 ## <samp>Installation</samp>
 
-### Prerequisites
+This isn't written as a general install guide. No two systems agree on partitioning, drivers or desktop-environment assumptions closely enough for a copy-paste script to be responsible advice, and that's not what this repo is for — it's a record of one specific desktop, not a distro.
 
-- A fresh **Arch** or **EndeavourOS** install (no desktop environment needed)
-- Internet connection
-- A non-root user with `sudo`
+`install.sh` exists to keep this repo's one other machine — a laptop — in line with this one. See [Keeping machines in sync](#sync) for how that actually works day to day. If you're curious what a fresh run does, the script is meant to be read, not just executed — every step is commented with why it exists, not just what it does.
 
-### One-command install
+<a name="sync"/>
 
-```sh
-bash <(curl -s https://raw.githubusercontent.com/boernerc20/dotfiles-arch/main/install.sh)
-```
-
-Or clone first:
+## <samp>Keeping machines in sync</samp>
 
 ```sh
-git clone https://github.com/boernerc20/dotfiles-arch.git ~/projects/dotfiles-arch
-bash ~/projects/dotfiles-arch/install.sh
+dotfiles-sync
 ```
 
-> Do **not** run as root. The script uses `sudo` internally where needed.
+Pulls the latest commit, redeploys every tracked `.config/` entry, and installs anything a new commit newly depends on (`install.sh` is idempotent — re-running it never touches `secrets.env`, `weather.env`, `hyprland-local.conf` or `.zshrc.local`, and every package install is `--needed`). The desktop is the source of truth; the laptop pulls, it never pushes configuration back.
 
-### What the install script does
+Two things stay genuinely per-machine and are never synced:
 
-| Step | What happens |
-|------|-------------|
-| Network check | Verifies internet is available |
-| System update | `pacman -Syu` |
-| yay | Installs the AUR helper if not present |
-| Packages | Installs everything (pacman + AUR) |
-| Services | Enables NetworkManager, bluetooth, and the display manager |
-| Shell | Sets `zsh` as the default shell |
-| Dotfiles | Deploys all configs |
-| hyprland-local.conf | Creates the machine-local monitor/GPU override file |
-| Secrets | Creates `secrets.env` and `weather.env`, both empty and `0600` |
-| Initial palette | Runs `wal-hypr.sh` against the first wallpaper it finds, or tells you what to run if there are none |
-| Pywalfox | Installs the Firefox native connector |
-
-Re-running it is safe: existing `secrets.env`, `weather.env`, `hyprland-local.conf` and `.zshrc.local` are left untouched.
-
-### After the install
-
-**1. Add wallpapers.** They are **not** bundled — they are large and personal. Put some in `~/pics/wallpapers/`, then:
-
-```sh
-~/.local/bin/wal-hypr.sh ~/pics/wallpapers/your-image.png
-```
-
-From then on `Super + W` handles it. If you install with an empty wallpaper folder the script says so and skips the palette pass rather than failing.
-
-**2. Set your monitor.**
-
-```sh
-hyprctl monitors                              # find the name
-nvim ~/.config/hypr/hyprland-local.conf       # e.g. monitor=DP-3, 3440x1440@120, 0x0, 1
-```
-
-**3. Add your secrets.** The install script creates both files empty and `0600`; you just fill them in.
-
-```sh
-nvim ~/.config/shell/secrets.env     # OPENWEATHER_API_KEY, and anything else private
-nvim ~/.config/waybar/weather.env    # the SAME OpenWeatherMap key
-```
-
-**Never put a key in `.zshrc`** — that file is tracked, and doing exactly that is how two live credentials sat in this public repo for four months.
-
-> Two files, one key. waybar is launched by Hyprland rather than from a login shell, so it never sees the shell's environment and needs its own copy. Rotating means editing **both**.
-
-> A freshly generated OpenWeatherMap key returns `401 Invalid API key` for up to a couple of hours before it activates. That is normal — the weather module shows its alert glyph until then.
-
-**4. Reboot**, log in, and select Hyprland.
-
-### Manual steps
-
-**Pywalfox** — open Firefox once, then `pywalfox install`, and add the [browser extension](https://addons.mozilla.org/en-US/firefox/addon/pywalfox/).
-
-**NVIDIA** — uncomment the relevant block in `~/.config/hypr/hyprland-local.conf` and install `nvidia-dkms nvidia-utils`.
+- **`hyprland-local.conf`** — monitor, touchpad, GPU env, machine-only autostart. Generated once by `install.sh`, gitignored, and sourced last so it overrides everything else — see the comment above its `source` line in `hyprland.conf`.
+- **Secrets** — `~/.config/shell/secrets.env` and `~/.config/waybar/weather.env` both carry the same OpenWeatherMap key; waybar is launched by Hyprland rather than a login shell, so it never sees the shell's environment and needs its own copy. Rotating the key means editing **both**, on **every** machine. Never put a key in `.zshrc` — that file is tracked, and doing exactly that is how two live credentials sat in this public repo for four months.
 
 <h2></h2>
 
@@ -204,16 +149,35 @@ nvim ~/.config/waybar/weather.env    # the SAME OpenWeatherMap key
 
 ### Layouts
 
+`Super + Alt` is the only layout-preset prefix — every preset in one place, nothing to remember across two modifiers.
+
 | Action | Bind |
 |--------|------|
 | Master / dwindle | `Super + O` / `Super + Shift + O` |
-| Thirds (3 columns) | `Super + G` |
-| Half (50/50) | `Super + H` |
-| Big + sidebar (66/33) | `Super + B` |
-| Reset sizes | `Super + Shift + =` |
+| Full width (1 column) | `Super + Alt + 1` |
+| Half (50/50) | `Super + Alt + 2` |
+| Thirds (3 columns) | `Super + Alt + 3` |
+| Quarters (4 columns) | `Super + Alt + 4` |
+| 66/33, main on left | `Super + Alt + E` |
+| 33/66, main on right | `Super + Alt + R` |
+| 25/50/25, focus centred | `Super + Alt + C` |
+| Golden ratio (62/38) | `Super + Alt + G` |
+| Reset to equal sizes | `Super + Alt + 0` |
 | Add / remove master | `Super + [` / `Super + ]` |
 | Swap with master | `Super + \` |
 | Cycle master position | `Super + I` |
+
+### Windows
+
+| Action | Bind |
+|--------|------|
+| Toggle scratchpad | `Super + B` |
+| Send window to scratchpad | `Super + Shift + B` |
+| Toggle window group (tabs) | `Super + G` |
+| Cycle group tabs | `Super + Shift + G` |
+| Pin window (floating only) | `Super + H` |
+| Dismiss top notification | `Super + Shift + =` |
+| Dismiss all notifications | `Super + Shift + -` |
 
 ### Screenshots
 
@@ -248,9 +212,14 @@ The shared plate in `style-base.css` owns padding, border, tracking and shadow. 
 
 Run `scripts/verify-glyphs.py` after touching any icon. It fails on stripped glyphs, missing font coverage, and icons that have decayed into ASCII.
 
-### Network interface
+### Machine-specific hardware
 
-The sparkline module in `config.jsonc` is pinned to an interface name — update it for your machine.
+Two things auto-detect at runtime rather than being hardcoded, so the same script runs correctly on both machines with no per-machine fork:
+
+- **`hardware.sh`**'s fourth field — GPU power draw if `nvidia-smi` exists, battery percentage if `/sys/class/power_supply/BAT0` exists, nothing if neither does
+- **`net-sparkline.py`** — reads the default-route interface out of `/proc/net/route` (`net-sparkline.py auto` in `config.jsonc`) rather than a hardcoded NIC name
+
+**`~/.local/bin/brightness`** picks the right control path the same way: `brightnessctl` if `/sys/class/backlight` has an entry (a real laptop panel), DDC/CI over `~/.local/bin/monitor-brightness` if not (an external monitor with its own scaler — see that script's header for why a naive version is unusable: bus caching, a non-blocking lock, ~330ms per write).
 
 <h2></h2>
 
@@ -276,28 +245,32 @@ That file is owned by the hyprlock package and is in its pacman backup array, so
 dotfiles-arch/
 ├── .config/
 │   ├── hypr/
-│   │   ├── conf.d/         # numbered, topic-scoped config
-│   │   └── hyprlock.conf   # generated from the wallust template
+│   │   ├── conf.d/              # numbered, topic-scoped config
+│   │   └── hyprlock.conf        # generated from the wallust template
 │   ├── waybar/
-│   │   ├── config.jsonc
-│   │   ├── style-base.css  # style.css is built at runtime, gitignored
-│   │   └── scripts/        # incl. verify-glyphs.py
+│   │   ├── config.jsonc         # desktop layout
+│   │   ├── config-laptop.jsonc  # laptop layout — install.sh picks one by chassis
+│   │   ├── style-base.css       # shared; style.css is built at runtime, gitignored
+│   │   └── scripts/             # incl. verify-glyphs.py, hardware.sh, net-sparkline.py
 │   ├── wallust/
-│   │   ├── wallust.toml    # 12 templates -> ~/.cache/wal/
+│   │   ├── wallust.toml         # 14 templates -> ~/.cache/wal/
 │   │   └── templates/
-│   ├── wal/postrun         # palette post-processing (GTK/Qt/Kvantum)
-│   ├── shell/              # secrets.env.example
+│   ├── wal/postrun              # palette post-processing (GTK/Qt/Kvantum)
+│   ├── Kvantum/                 # LayanDark theme, patched per-palette by postrun
+│   ├── shell/                   # secrets.env.example
 │   ├── kitty/  rofi/  mako/  yazi/  nvim/  btop/  cava/
-│   ├── neofetch/           # animated ASCII frames + recolour script
+│   ├── neofetch/                # animated ASCII frames + recolour script
 │   └── wlogout/  gtk-{2,3,4}.0/  qt6ct/
-├── .local/bin/             # wal-hypr.sh, lock, wallpaper-picker, ...
-├── assets/                 # README screenshots
-├── .zshrc_copy             # deployed as ~/.zshrc
+├── .local/bin/                  # wal-hypr.sh, lock, brightness, wallpaper-picker, ...
+├── assets/                      # README screenshots
+├── .zshrc_copy                  # deployed as ~/.zshrc
 ├── .p10k.zsh
 └── install.sh
 ```
 
-> `wallpapers/` is **not** tracked — see [After the install](#installation).
+Everything under `.config/` that `install.sh` deploys is enumerated straight from `git ls-files` at run time — not a hand-kept list — so this tree is illustrative, not exhaustive; run `git ls-files .config/` for the real current set.
+
+> `wallpapers/` is **not** tracked — large and personal. `install.sh` degrades gracefully with none present; drop some in `~/pics/wallpapers/` and `Super + W` picks them up.
 
 <h2></h2>
 
