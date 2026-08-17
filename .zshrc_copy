@@ -65,6 +65,13 @@ alias venv='source venv/bin/activate'
 alias ccm='ccm --plan pro'
 alias drives='df -h | grep mnt'
 
+# dotfiles-sync — pull the latest dotfiles on THIS machine and redeploy.
+# git pull alone is not enough: install.sh is what actually copies tracked
+# .config/ entries into place, picks the desktop-vs-laptop waybar layout via
+# chassis, and installs any package the pull's commits newly depend on. Safe
+# to re-run any time — every step it takes is idempotent (see its own header).
+alias dotfiles-sync='cd ~/projects/dotfiles-arch && git pull origin main && ./install.sh'
+
 # ── Yazi Integration ────────────────────────────────────────────────────────
 # Wrapper function to change directory on exit
 function yy() {
