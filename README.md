@@ -34,6 +34,14 @@ Every colour on the desktop is derived from the current wallpaper. Pick one with
 
 <h2></h2>
 
+### In motion
+
+The re-theme, layout presets and animated fetch, captured live.
+
+https://github.com/boernerc20/dotfiles-arch/raw/main/assets/demo-vid.mp4
+
+<h2></h2>
+
 ### Waybar
 
 Clipped-corner "plating" geometry, one typeface at one size, and per-module accent colours pulled from the palette. Icons are bound to their values with a size-scaled space rather than a literal one, so nothing floats.
