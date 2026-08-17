@@ -36,9 +36,9 @@ Every colour on the desktop is derived from the current wallpaper. Pick one with
 
 ### In motion
 
-The re-theme, layout presets and animated fetch, captured live.
+`Super + W`, pick a new wallpaper, and the whole desktop repaints in one pass.
 
-https://github.com/boernerc20/dotfiles-arch/raw/main/assets/demo-vid.mp4
+![demo](assets/demo.gif)
 
 <h2></h2>
 
