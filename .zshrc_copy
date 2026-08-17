@@ -30,7 +30,7 @@ export EDITOR=nvim
 [[ -f ~/.cache/wal/colors.sh ]] && source ~/.cache/wal/colors.sh
 
 # ── Aliases ─────────────────────────────────────────────────────────────────
-alias config='micro ~/.config/hypr/hyprland.conf'
+alias binds='micro ~/.config/hypr/conf.d/07-binds.conf'
 alias ls='ls -a'
 alias ll='ls -l'
 alias clock='tty-clock -c -C 4 -t'
@@ -45,11 +45,15 @@ alias unas-back='sudo umount /mnt/nas-back'
 alias nas-jarvis='sudo mount -t cifs //192.168.1.20/jarvis /mnt/jarvis -o uid=1000,gid=1000,vers=3.0,credentials=/etc/nas-credentials'
 alias unas-jarvis='sudo umount /mnt/jarvis'
 alias rm='trash-put'
-alias neo='~/.config/neofetch/animated-neofetch.sh'
+# ani-v2.sh, not animated-neofetch.sh — v2 additionally recolors the frames from
+# the current wal/wallust palette, so the animation follows the wallpaper. The
+# older script is kept only as a fallback and does no recoloring.
+alias neo='~/.config/neofetch/ani-v2.sh'
 alias master='sudo cat /lockbox/pass/master'
 alias rgb-default='openrgb -p DEFAULT'
 alias rgb-off='openrgb -p OFF'
 alias cmds='micro ~/projects/linux/03-configuration/cmds'
+alias shrink-video='~/projects/linux/04-utilities/shrink-video'
 alias cui='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd'
 alias cui-low='source /mnt/ai/comfy/comfy-low/bin/activate && python /mnt/ai/comfy/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --enable-cors-header --preview-method taesd --lowvram'
 alias gotop='gotop --nvidia -s -a -p'
