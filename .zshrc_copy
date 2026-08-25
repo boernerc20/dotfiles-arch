@@ -16,7 +16,7 @@ autoload -Uz compinit
 compinit
 
 # Default Editor
-export EDITOR=nvim
+export EDITOR=micro
 
 # ── NVIDIA GPU Settings ─────────────────────────────────────────────────────
 # Intentionally empty. Compositor environment now lives in ONE place:

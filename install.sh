@@ -93,7 +93,7 @@ PKGS=(
     zsh-completions
 
     # Editor
-    neovim
+    micro
 
     # Launcher + file manager
     rofi
@@ -729,11 +729,11 @@ echo -e "
 ${GREEN}Next steps:${NC}
 
   1. Edit your monitor line:
-     ${CYAN}nvim ~/.config/hypr/hyprland-local.conf${NC}
+     ${CYAN}micro ~/.config/hypr/hyprland-local.conf${NC}
      Run ${CYAN}hyprctl monitors${NC} after first Hyprland boot to get the right name
 
   2. Set your HA token and any machine env vars:
-     ${CYAN}nvim ~/.zshrc.local${NC}
+     ${CYAN}micro ~/.zshrc.local${NC}
 
   3. Reboot into Hyprland via ly:
      ${CYAN}sudo reboot${NC}

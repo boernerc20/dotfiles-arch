@@ -13,7 +13,7 @@ Personal dotfiles for an Arch Linux desktop: Hyprland that re-themes itself from
 | Window Manager | [`hyprland`](https://github.com/hyprwm/Hyprland) |
 | Terminal | [`kitty`](https://github.com/kovidgoyal/kitty) |
 | Shell | [`zsh`](https://www.zsh.org/) + [`powerlevel10k`](https://github.com/romkatv/powerlevel10k/) |
-| Editor | [`neovim`](https://github.com/neovim/neovim) |
+| Editor | [`micro`](https://github.com/zyedidia/micro) |
 | Panel | [`waybar`](https://github.com/Alexays/Waybar) |
 | Launcher | [`rofi`](https://github.com/davatorium/rofi) |
 | File Manager | [`yazi`](https://github.com/sxyazi/yazi) (+ [`pcmanfm`](https://github.com/lxde/pcmanfm) for GUI drag-and-drop) |
@@ -76,7 +76,7 @@ PewDiePie's animated ASCII frames, recoloured to the live palette, `fastfetch` s
 
 ## <samp>Key Features</samp>
 
-- **Dynamic theming** — `wal-hypr.sh` runs wallust and propagates the palette to waybar, kitty, rofi, hyprlock, mako, cava, yazi, nvim, Firefox, GTK/Qt
+- **Dynamic theming** — `wal-hypr.sh` runs wallust and propagates the palette to waybar, kitty, rofi, hyprlock, mako, cava, yazi, Firefox, GTK/Qt
 - **Wallpaper picker** — `Super + W`, a rofi thumbnail grid over `~/pics/wallpapers`; drop a file in, it appears
 - **Hardware-aware waybar** — GPU power draw or battery, whichever the machine has; network interface auto-detected too. Desktop and laptop run different module layouts from the same repo
 - **Single-instance lock** — `Super + L` goes through a `flock` wrapper so a double-press can't spawn two lock clients
@@ -140,7 +140,7 @@ dotfiles-arch/
 │   ├── hypr/                    # conf.d/ numbered + topic-scoped
 │   ├── waybar/                  # config.jsonc + config-laptop.jsonc, style, scripts/
 │   ├── wallust/                 # templates -> ~/.cache/wal/
-│   ├── Kvantum/  kitty/  rofi/  mako/  yazi/  nvim/  btop/  cava/
+│   ├── Kvantum/  kitty/  rofi/  mako/  yazi/  btop/  cava/
 │   └── neofetch/  wlogout/  gtk-{2,3,4}.0/  qt6ct/
 ├── .local/bin/                  # wal-hypr.sh, lock, brightness, wallpaper-picker, ...
 ├── assets/                      # README screenshots
