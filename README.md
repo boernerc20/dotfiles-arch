@@ -6,7 +6,7 @@
 
 ## <samp>About</samp>
 
-Personal dotfiles for an Arch Linux desktop: Hyprland that re-themes itself from whatever wallpaper is on screen. Cyberpunk-leaning, built around a 3440x1440 ultrawide. This is what I actually run — a showcase, not an install-it-yourself tutorial. Synced to one other machine, a laptop, via `dotfiles-sync` (see [Keeping machines in sync](#sync)); the desktop stays the source of truth.
+Personal dotfiles for an Arch Linux desktop: Hyprland that re-themes itself from whatever wallpaper is on screen. Cyberpunk-leaning, built around a 3440x1440 ultrawide. This is what I actually run — a showcase, not an install-it-yourself tutorial.
 
 | | |
 |---|---|
@@ -82,19 +82,6 @@ PewDiePie's animated ASCII frames, recoloured to the live palette, `fastfetch` s
 - **Single-instance lock** — `Super + L` goes through a `flock` wrapper so a double-press can't spawn two lock clients
 - **Split config** — `hypr/conf.d/` is numbered and topic-scoped rather than one long file
 - **Machine-local overrides** — `hyprland-local.conf` and `secrets.env` keep per-machine and secret values out of the repo
-- **One-command sync** — `dotfiles-sync` pulls and redeploys everything; see [below](#sync)
-
-<a name="sync"/>
-
-## <samp>Keeping machines in sync</samp>
-
-```sh
-dotfiles-sync
-```
-
-Pulls the latest commit, redeploys every tracked config, installs anything new. Idempotent — safe to re-run any time, never touches secrets or machine-local files. The desktop is the source of truth; the laptop only ever pulls.
-
-A couple things stay genuinely per-machine and are never synced: `hyprland-local.conf` (monitor, touchpad, GPU env — sourced last so it overrides everything else) and the secrets files (`shell/secrets.env`, `waybar/weather.env`).
 
 <h2></h2>
 
